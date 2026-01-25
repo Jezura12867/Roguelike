@@ -14,24 +14,25 @@ class Cube(pygame.sprite.Sprite):
         self.image.fill("red")
         self.rect = self.image.get_rect(topleft = pozice)
         
-from level import Walls
+from map import Tiles
 
 
 class Player:
     
+    def __init__(self) -> None:
+        super.__init__
     
-    def movement(player_hitbox, SCREEN_WIDTH, SCREEN_HEIGHT, dodge_roll_cooldown, wall_colide, prev_pos, screen, map_num) -> bool:
-        
         # Variables
-        player_movement_speed: int = 5
-        direction:list = [0, 0]
-        prev_x = player_hitbox.x
-        prev_y = player_hitbox.y
+        self.player_movement_speed: int = 50
+        self.dodge_roll_mulitplier: int = 25
+        self.wall_colide: bool = False
+    
+    def input_processing(self):
         
         
         # Key input
-        key: ScancodeWrapper = pygame.key.get_pressed()
-
+        key = pygame.key.get_pressed()
+        direction: list = [0, 0]
 
         # Movement
         if key[pygame.K_w] == True:
@@ -44,36 +45,59 @@ class Player:
             direction[0] = -1
 
         if key[pygame.K_d] == True:
-            direction[0] = 1     
-
+            direction[0] = 1 
         
-        player_hitbox.x += direction[0] * player_movement_speed
-        wall_colide: bool = Walls.show(screen, map_num, player_hitbox)
+        return key, direction
+
+
+    def colliding(self, player_hitbox, prev_pos, delta, direction):
+
+
+        self.wall_colide = Tiles().collision(player_hitbox)
+        
+        player_hitbox.x += direction[0] * self.player_movement_speed * delta
+        wall_colide = Tiles().collision(player_hitbox)
         if wall_colide == True:
             player_hitbox.x = prev_pos[0]
-        player_hitbox.y += direction[1] * player_movement_speed
+        else:
+            prev_pos[0] = player_hitbox.x
+        player_hitbox.y += direction[1] * self.player_movement_speed * delta
 
-        wall_colide: bool = Walls.show(screen, map_num, player_hitbox)
+        wall_colide: bool = Tiles().collision(player_hitbox)
         if wall_colide == True:
             player_hitbox.y = prev_pos[1]
+        else:
+            prev_pos[1] = player_hitbox.y
 
         
+        return prev_pos, player_hitbox
 
+    
+    def roll(self, player_hitbox, dodge_roll_cooldown, delta, key, direction):
 
         # Dodge roll
         dodge_roll_cooldown -= 1
 
         if dodge_roll_cooldown <= 0:
             if key[pygame.K_SPACE] == True:
-                player_hitbox.x += direction[0] * player_movement_speed * 50
-                player_hitbox.y += direction[1] * player_movement_speed * 50
-                return True, prev_pos
+                player_hitbox.x += direction[0] * self.player_movement_speed * self.dodge_roll_mulitplier * delta
+                player_hitbox.y += direction[1] * self.player_movement_speed * self.dodge_roll_mulitplier * delta
+                return True
         
-        return False, prev_pos
+        return False
 
+    def run(self, player_hitbox, dodge_roll_cooldown, prev_pos, delta):
         
+        input_vars = Player().input_processing()
 
+        key = input_vars[0]
+        direction = input_vars[1]
 
+        collision_vars = Player().colliding(player_hitbox, prev_pos, delta, direction)
 
+        prev_pos = collision_vars[0]
+        player_hitbox = collision_vars[1]
 
-    
+        in_a_dodge_roll = Player().roll(player_hitbox, dodge_roll_cooldown, delta, key, direction)
+
+        return in_a_dodge_roll, prev_pos
