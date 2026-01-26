@@ -13,6 +13,7 @@ SCREEN_WIDTH: int = 1550
 SCREEN_HEIGHT: int = 900
 PLAYER_SIZE: int = 64
 BULLET_SIZE: int = 8
+BACKGROUND_COLOR = (127, 127, 127)
 
 
 # Pygame variables
@@ -35,74 +36,87 @@ bullet = pygame.rect.Rect((SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, BULLET_SIZE, BUL
 class Game:
 
     def __init__(self) -> None:
-        pass
-
-    def main(self) -> None:
-
-        
         # NOTE_ TO SELF: CHANGE THESE NUMBERS
         # Decides, what room type you begin in
         map_num: int = 1
         
-        bullet_spawned_and_dir: list = [False, 0]
-        bullet_dir: int = 1
-        prev_pos: list = [player_hitbox.x, player_hitbox.y]
+        self.bullet_spawned: bool = False
+        self.bullet_dir: int = 1
+        self.prev_pos: list = [player_hitbox.x, player_hitbox.y]
+        self.in_a_dodge_roll: bool = False
+        self.dodge_roll_cooldown: int = 0
+
+
+    def process(self):
+
+        # Var assigning
         running = True
         delta: float = 1.0
-
-
-        # Sets dodge cooldown
-        dodge_roll_cooldown: int = 500
-
+    
         # Tho main game loop
         while running:
 
-            # Makes the screen gray
-            screen.fill((130, 130, 130))          
+            # Sets the background
+            screen.fill(BACKGROUND_COLOR)          
 
 
             # Functions
             Tiles().run(screen, player_hitbox)
             colliding_walls_player = Tiles().collision(player_hitbox)
-            player_movement_vars = Player().run(player_hitbox, dodge_roll_cooldown, prev_pos, delta)
-            bullet_spawned_and_dir = GunSystem().run(gun, player_hitbox, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, bullet_spawned_and_dir[0], bullet_dir)
+            player_movement_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.prev_pos, delta)
+            bullet_spawned_and_dir = GunSystem().run(gun, player_hitbox, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, self.bullet_spawned, self.bullet_dir)
 
-            # Var updatring
-            in_a_dodge_roll = player_movement_vars[0]
-            if colliding_walls_player != True:
-                prev_pos = player_movement_vars[1]
-            
 
-            bullet_dir = bullet_spawned_and_dir[1]
-            
-            # Dodge management
-            dodge_roll_cooldown -= 1
-            if in_a_dodge_roll == True:
-                dodge_roll_cooldown = 120
+            # Changing vars
+            managed_vars = Game().var_management(colliding_walls_player, player_movement_vars, self.in_a_dodge_roll, self.prev_pos,
+                                                                                self.dodge_roll_cooldown, bullet_spawned_and_dir)
 
+            self.in_a_dodge_roll, self.prev_pos, self.bullet_spawned, self.bullet_dir, self.dodge_roll_cooldown = managed_vars
+
+
+            # Quit function
+            running = Game().quitting()
 
             # Rendering
             pygame.draw.rect(screen, (0, 255, 175), player_hitbox)
             pygame.draw.rect(screen, (200, 200, 0), gun)
-            if bullet_spawned_and_dir[0] == True:
+            if self.bullet_spawned == True:
                 pygame.draw.rect(screen, (200, 200, 0), bullet)
 
 
-            # Quit function
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    running = False
-                    quit()
-            
 
             # 60 fps; updating the screen
             delta = clock.tick(60) / 100
             pygame.display.flip()
 
-            
+    def var_management(self, colliding_walls_player, player_movement_vars, in_a_dodge_roll, prev_pos, dodge_roll_cooldown, bullet_spawned_and_dir):
+
+        # Var updatring
+        in_a_dodge_roll = player_movement_vars[0]
+        if colliding_walls_player != True:
+            prev_pos = player_movement_vars[1]
+        
+        bullet_spawned = bullet_spawned_and_dir[0]
+        bullet_dir = bullet_spawned_and_dir[1]
+
+        # Dodge management
+        dodge_roll_cooldown -= 1
+        if in_a_dodge_roll == True:
+            dodge_roll_cooldown = 120
+        
+        return in_a_dodge_roll, prev_pos, bullet_spawned, bullet_dir, dodge_roll_cooldown
+    
+    def quitting(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return False
+        
+        return True
+
+
 
 
 # Checks if running from this file
 if __name__ == "__main__":
-    Game().main()
+    Game().process()

@@ -13,7 +13,7 @@ class GunSystem:
         
     
 
-    def posanddir(self, gun, player, bullet_spawned):
+    def position(self, gun, player, bullet_spawned):
 
         # Changes direction of gun according to the mouse's
         if player.x > pygame.mouse.get_pos()[0]:
@@ -41,7 +41,7 @@ class GunSystem:
 
     
     
-    def shoot(self, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, gun):
+    def shoot(self, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, gun, bullet_dir):
 
         # Detects if you click the mouse
         if pygame.mouse.get_pressed()[0] == True:
@@ -50,7 +50,7 @@ class GunSystem:
 
         # Checks if bullet has spawned, if yes, changes its position; else, sets its position to the gun's
         if self.bullet_spawned == True:
-            bullet.x += 10 * self.gun_dir
+            bullet.x += 10 * bullet_dir
         else:
             bullet.x = gun.x
             bullet.y = gun.y
@@ -70,6 +70,6 @@ class GunSystem:
         self.bullet_dir = bullet_dir
         
         # Runs the whole function in the correct order
-        GunSystem.shoot(self, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, gun)
-        GunSystem.posanddir(self, gun, player, bullet_spawned)
+        GunSystem.shoot(self, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, gun, bullet_dir)
+        GunSystem.position(self, gun, player, bullet_spawned)
         return self.bullet_spawned, self.bullet_dir

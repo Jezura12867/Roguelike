@@ -34,7 +34,7 @@ class Player:
         key = pygame.key.get_pressed()
         direction: list = [0, 0]
 
-        # Movement
+        # Direction
         if key[pygame.K_w] == True:
             direction[1] = -1
         
@@ -53,17 +53,24 @@ class Player:
     def colliding(self, player_hitbox, prev_pos, delta, direction):
 
 
+        # Checks if player is colliding with wall
         self.wall_colide = Tiles().collision(player_hitbox)
         
+
+        # Move player, if player if now colliding with wall, cancel
         player_hitbox.x += direction[0] * self.player_movement_speed * delta
         wall_colide = Tiles().collision(player_hitbox)
+
         if wall_colide == True:
             player_hitbox.x = prev_pos[0]
         else:
             prev_pos[0] = player_hitbox.x
-        player_hitbox.y += direction[1] * self.player_movement_speed * delta
 
+
+        # Same thing, but for the y axis
+        player_hitbox.y += direction[1] * self.player_movement_speed * delta
         wall_colide: bool = Tiles().collision(player_hitbox)
+
         if wall_colide == True:
             player_hitbox.y = prev_pos[1]
         else:
@@ -86,18 +93,20 @@ class Player:
         
         return False
 
-    def run(self, player_hitbox, dodge_roll_cooldown, prev_pos, delta):
-        
-        input_vars = Player().input_processing()
 
-        key = input_vars[0]
-        direction = input_vars[1]
+    # Runs the class functions
+    def run(self, player_hitbox, dodge_roll_cooldown, prev_pos, delta):
+
+        input_vars: tuple = Player().input_processing()
+
+        key: ScancodeWrapper = input_vars[0]
+        direction: list = input_vars[1]
 
         collision_vars = Player().colliding(player_hitbox, prev_pos, delta, direction)
 
         prev_pos = collision_vars[0]
         player_hitbox = collision_vars[1]
 
-        in_a_dodge_roll = Player().roll(player_hitbox, dodge_roll_cooldown, delta, key, direction)
+        in_a_dodge_roll: bool = Player().roll(player_hitbox, dodge_roll_cooldown, delta, key, direction)
 
         return in_a_dodge_roll, prev_pos

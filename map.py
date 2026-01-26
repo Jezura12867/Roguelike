@@ -39,8 +39,8 @@ class Tiles:
                     x = collum * self.tile_size / 1.3 + 2
                     y = row * self.tile_size / 1.325
 
-                    cube = Cube((x, y), self.tile_size)
-                    self.tiles.add(cube)
+                    tile = Cube((x, y), self.tile_size)
+                    self.tiles.add(tile)
 
         self.tiles.draw(screen)
         
@@ -53,9 +53,9 @@ class Tiles:
                     x = collum * self.tile_size / 1.3 + 2
                     y = row * self.tile_size / 1.325
 
-                    cube = Cube((x, y), self.tile_size)
+                    tile = Cube((x, y), self.tile_size)
 
-                    if  pygame.Rect.colliderect(player_hitbox, cube.rect):
+                    if  pygame.Rect.colliderect(player_hitbox, tile.rect):
                         return True
 
         return False
