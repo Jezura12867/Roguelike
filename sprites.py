@@ -6,14 +6,24 @@ from pygame.key import ScancodeWrapper
 
 class Cube(pygame.sprite.Sprite):
 
-    def __init__(self, pozice, size):
+    def __init__(self, position, size):
     
-        # Sets up the cube fromatting
+        # Sets up the cube formatting
         super().__init__()
         self.image = pygame.Surface((size, size))
         self.image.fill("red")
-        self.rect = self.image.get_rect(topleft = pozice)
-        
+        self.rect = self.image.get_rect(topleft = position)
+
+class Entrance(pygame.sprite.Sprite):
+
+    def __init__(self, position, size):
+    
+        # Sets up the exit formatting
+        super().__init__()
+        self.image = pygame.Surface((size, size))
+        self.image.fill("blue")
+        self.rect = self.image.get_rect(topleft = position)
+
 from map import Tiles
 
 
@@ -25,7 +35,7 @@ class Player:
         # Variables
         self.player_movement_speed: int = 50
         self.dodge_roll_mulitplier: int = 25
-        self.wall_colide: bool = False
+        self.wall_colide = False
     
     def input_processing(self):
         
@@ -49,19 +59,42 @@ class Player:
         
         return key, direction
 
+    def entrance(self, player_hitbox):
 
-    def colliding(self, player_hitbox, prev_pos, delta, direction):
+        match player_hitbox.x:
+            case _ if player_hitbox.x < 100:
+                return "x", 1400
+            case _ if player_hitbox.x > 1400:
+                return "x", 100
+
+        match player_hitbox.y:
+            case _ if player_hitbox.y < 70:
+                return "y", 750
+            case _ if player_hitbox.y > 750:
+                return "y", 70
+
+
+    def colliding(self, player_hitbox, prev_pos, delta, direction, rooms_dict):
 
 
         # Checks if player is colliding with wall
-        self.wall_colide = Tiles().collision(player_hitbox)
+        self.wall_colide = Tiles().collision(player_hitbox, rooms_dict)
+
+        if self.wall_colide == "Entrance":
+            entrance_vars: tuple = Player().entrance(player_hitbox)
+
+            if entrance_vars[0] == "x":
+                player_hitbox.x = entrance_vars[1]
+            else:
+                player_hitbox.y = entrance_vars[1]
+
         
 
         # Move player, if player if now colliding with wall, cancel
         player_hitbox.x += direction[0] * self.player_movement_speed * delta
-        wall_colide = Tiles().collision(player_hitbox)
+        wall_colide = Tiles().collision(player_hitbox, rooms_dict)
 
-        if wall_colide == True:
+        if wall_colide == "Wall":
             player_hitbox.x = prev_pos[0]
         else:
             prev_pos[0] = player_hitbox.x
@@ -69,9 +102,9 @@ class Player:
 
         # Same thing, but for the y axis
         player_hitbox.y += direction[1] * self.player_movement_speed * delta
-        wall_colide: bool = Tiles().collision(player_hitbox)
+        wall_colide = Tiles().collision(player_hitbox, rooms_dict)
 
-        if wall_colide == True:
+        if wall_colide == "Wall":
             player_hitbox.y = prev_pos[1]
         else:
             prev_pos[1] = player_hitbox.y
@@ -95,14 +128,14 @@ class Player:
 
 
     # Runs the class functions
-    def run(self, player_hitbox, dodge_roll_cooldown, prev_pos, delta):
+    def run(self, player_hitbox, dodge_roll_cooldown, prev_pos, delta, rooms_dict):
 
         input_vars: tuple = Player().input_processing()
 
         key: ScancodeWrapper = input_vars[0]
         direction: list = input_vars[1]
 
-        collision_vars = Player().colliding(player_hitbox, prev_pos, delta, direction)
+        collision_vars = Player().colliding(player_hitbox, prev_pos, delta, direction, rooms_dict)
 
         prev_pos = collision_vars[0]
         player_hitbox = collision_vars[1]

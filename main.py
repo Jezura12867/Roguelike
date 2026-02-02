@@ -52,6 +52,7 @@ class Game:
         # Var assigning
         running = True
         delta: float = 1.0
+        rooms_dict = {}
     
         # Tho main game loop
         while running:
@@ -61,9 +62,9 @@ class Game:
 
 
             # Functions
-            Tiles().run(screen, player_hitbox)
-            colliding_walls_player = Tiles().collision(player_hitbox)
-            player_movement_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.prev_pos, delta)
+            rooms_dict = Tiles().render(screen, rooms_dict)
+            colliding_walls_player = Tiles().collision(player_hitbox, rooms_dict)
+            player_movement_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.prev_pos, delta, rooms_dict)
             bullet_spawned_and_dir = GunSystem().run(gun, player_hitbox, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, self.bullet_spawned, self.bullet_dir)
 
 
@@ -110,6 +111,7 @@ class Game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+                quit()
                 return False
         
         return True
