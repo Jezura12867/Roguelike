@@ -13,14 +13,13 @@ class Tiles:
         self.exits = pygame.sprite.Group()
         self.tile_size = 64
 
-    def render(self, screen, rooms_dict):
+    def render(self, screen, rooms_dict, room):
 
-        rooms_vars = Rooms().main(rooms_dict)
+        rooms_vars = Rooms().main(rooms_dict, room)
 
         map = rooms_vars[0]
         rooms_dict = rooms_vars[1]
-
-        print(map)
+        room = rooms_vars[2]
 
         for row, blank in enumerate(map):
             for collum, cell in enumerate(blank):
@@ -44,8 +43,11 @@ class Tiles:
         return rooms_dict
         
     
-    def collision(self, player_hitbox, rooms_dict):
-        map, rooms_dict = Rooms().main(rooms_dict)
+    def collision(self, player_hitbox, rooms_dict, room):
+        map_vars = Rooms().main(rooms_dict, room)
+
+        map = map_vars[0]
+        room = map_vars[1]
 
         collided_objects = []
 

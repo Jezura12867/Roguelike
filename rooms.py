@@ -43,21 +43,57 @@ class Rooms:
                     "X                             X",
                     "X                             X",
                     "XXXXXXXXXXXXXEEEXXXXXXXXXXXXXXX",
+                ],
+            "2": [  "XXXXXXXXXXXXXEEEXXXXXXXXXXXXXXX",
+                    "X                             X",
+                    "X                             X",
+                    "X     XXXXXXXXXXXXXXXXXXX     X",
+                    "X                             X",
+                    "X                             X",
+                    "X                             X",
+                    "E                             E",
+                    "E                             E",
+                    "E                             E",
+                    "X                             X",
+                    "X                             X",
+                    "X                             X",
+                    "X                             X",
+                    "X                             X",
+                    "X                             X",
+                    "X                             X",
+                    "XXXXXXXXXXXXXEEEXXXXXXXXXXXXXXX",
+                ],
+            "3": [  "XXXXXXXXXXXXXEEEXXXXXXXXXXXXXXX",
+                    "X                     X       X",
+                    "X     X                       X",
+                    "X                             X",
+                    "X                   XX        X",
+                    "X                             X",
+                    "X                             X",
+                    "E                             E",
+                    "E                             E",
+                    "E              X              E",
+                    "X                    X        X",
+                    "X                             X",
+                    "X                     X       X",
+                    "X       X                     X",
+                    "X       XX                    X",
+                    "X                             X",
+                    "X                             X",
+                    "XXXXXXXXXXXXXEEEXXXXXXXXXXXXXXX",
                 ]
         }
 
 
-        self.room = 0, 0
 
-
-    def new_room(self, x, y, rooms_dict):
-        rooms_dict.update({f"{self.room}": self.types[str(randint(0, len(self.types) - 1))]})
+    def new_room(self, rooms_dict, room):
+        rooms_dict.update({f"{room}": self.types[str(randint(0, len(self.types) - 1))]})
         return rooms_dict
 
 
-    def main(self, rooms_dict):
+    def main(self, rooms_dict, room):
 
-        if rooms_dict.get(f"{self.room[0], self.room[1]}") == None:
-            rooms_dict = (Rooms().new_room(self.room[0], self.room[1], rooms_dict))
+        if rooms_dict.get(f"{room[0], room[1]}") == None:
+            rooms_dict = (Rooms().new_room(rooms_dict, room))
         
-        return rooms_dict.get(f"{self.room[0], self.room[1]}"), rooms_dict
+        return rooms_dict.get(f"{room[0], room[1]}"), rooms_dict, room

@@ -53,6 +53,7 @@ class Game:
         running = True
         delta: float = 1.0
         rooms_dict = {}
+        room = 0, 0
     
         # Tho main game loop
         while running:
@@ -60,11 +61,10 @@ class Game:
             # Sets the background
             screen.fill(BACKGROUND_COLOR)          
 
-
             # Functions
-            rooms_dict = Tiles().render(screen, rooms_dict)
-            colliding_walls_player = Tiles().collision(player_hitbox, rooms_dict)
-            player_movement_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.prev_pos, delta, rooms_dict)
+            rooms_dict = Tiles().render(screen, rooms_dict, room)
+            colliding_walls_player = Tiles().collision(player_hitbox, rooms_dict, room)
+            player_movement_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.prev_pos, delta, rooms_dict, room)
             bullet_spawned_and_dir = GunSystem().run(gun, player_hitbox, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, self.bullet_spawned, self.bullet_dir)
 
 
@@ -72,7 +72,7 @@ class Game:
             managed_vars = Game().var_management(colliding_walls_player, player_movement_vars, self.in_a_dodge_roll, self.prev_pos,
                                                                                 self.dodge_roll_cooldown, bullet_spawned_and_dir)
 
-            self.in_a_dodge_roll, self.prev_pos, self.bullet_spawned, self.bullet_dir, self.dodge_roll_cooldown = managed_vars
+            self.in_a_dodge_roll, self.prev_pos, self.bullet_spawned, self.bullet_dir, self.dodge_roll_cooldown, room = managed_vars
 
 
             # Quit function
@@ -105,7 +105,7 @@ class Game:
         if in_a_dodge_roll == True:
             dodge_roll_cooldown = 120
         
-        return in_a_dodge_roll, prev_pos, bullet_spawned, bullet_dir, dodge_roll_cooldown
+        return in_a_dodge_roll, prev_pos, bullet_spawned, bullet_dir, dodge_roll_cooldown, player_movement_vars[2]
     
     def quitting(self):
         for event in pygame.event.get():

@@ -59,29 +59,31 @@ class Player:
         
         return key, direction
 
-    def entrance(self, player_hitbox):
+    def entrance(self, player_hitbox, room):
 
         match player_hitbox.x:
             case _ if player_hitbox.x < 100:
-                return "x", 1400
+                return "x", 1400, (room[0] - 1, room[1])
             case _ if player_hitbox.x > 1400:
-                return "x", 100
+                return "x", 100, (room[0] + 1, room[1])
 
         match player_hitbox.y:
             case _ if player_hitbox.y < 70:
-                return "y", 750
+                return "y", 750, (room[0], room[1] - 1)
             case _ if player_hitbox.y > 750:
-                return "y", 70
+                return "y", 70, (room[0], room[1] + 1)
 
 
-    def colliding(self, player_hitbox, prev_pos, delta, direction, rooms_dict):
+    def colliding(self, player_hitbox, prev_pos, delta, direction, rooms_dict, room):
 
 
         # Checks if player is colliding with wall
-        self.wall_colide = Tiles().collision(player_hitbox, rooms_dict)
+        self.wall_colide = Tiles().collision(player_hitbox, rooms_dict, room)
 
         if self.wall_colide == "Entrance":
-            entrance_vars: tuple = Player().entrance(player_hitbox)
+            entrance_vars: tuple = Player().entrance(player_hitbox, room)
+
+            room = tuple(entrance_vars[2])
 
             if entrance_vars[0] == "x":
                 player_hitbox.x = entrance_vars[1]
@@ -92,7 +94,7 @@ class Player:
 
         # Move player, if player if now colliding with wall, cancel
         player_hitbox.x += direction[0] * self.player_movement_speed * delta
-        wall_colide = Tiles().collision(player_hitbox, rooms_dict)
+        wall_colide = Tiles().collision(player_hitbox, rooms_dict, room)
 
         if wall_colide == "Wall":
             player_hitbox.x = prev_pos[0]
@@ -102,7 +104,7 @@ class Player:
 
         # Same thing, but for the y axis
         player_hitbox.y += direction[1] * self.player_movement_speed * delta
-        wall_colide = Tiles().collision(player_hitbox, rooms_dict)
+        wall_colide = Tiles().collision(player_hitbox, rooms_dict, room)
 
         if wall_colide == "Wall":
             player_hitbox.y = prev_pos[1]
@@ -110,7 +112,7 @@ class Player:
             prev_pos[1] = player_hitbox.y
 
         
-        return prev_pos, player_hitbox
+        return prev_pos, player_hitbox, room
 
     
     def roll(self, player_hitbox, dodge_roll_cooldown, delta, key, direction):
@@ -128,18 +130,19 @@ class Player:
 
 
     # Runs the class functions
-    def run(self, player_hitbox, dodge_roll_cooldown, prev_pos, delta, rooms_dict):
+    def run(self, player_hitbox, dodge_roll_cooldown, prev_pos, delta, rooms_dict, room):
 
         input_vars: tuple = Player().input_processing()
 
         key: ScancodeWrapper = input_vars[0]
         direction: list = input_vars[1]
 
-        collision_vars = Player().colliding(player_hitbox, prev_pos, delta, direction, rooms_dict)
+        collision_vars = Player().colliding(player_hitbox, prev_pos, delta, direction, rooms_dict, room)
 
         prev_pos = collision_vars[0]
         player_hitbox = collision_vars[1]
+        room = collision_vars[2]
 
         in_a_dodge_roll: bool = Player().roll(player_hitbox, dodge_roll_cooldown, delta, key, direction)
 
-        return in_a_dodge_roll, prev_pos
+        return in_a_dodge_roll, prev_pos, room
