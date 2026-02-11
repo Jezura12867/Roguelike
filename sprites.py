@@ -18,13 +18,13 @@ class Entrance(pygame.sprite.Sprite):
 
     def __init__(self, position, size):
     
-        # Sets up the exit formatting
+        # Sets up the entrance formatting
         super().__init__()
         self.image = pygame.Surface((size, size))
         self.image.fill("blue")
         self.rect = self.image.get_rect(topleft = position)
 
-from map import Tiles
+from rooms import Tiles
 
 
 class Player:
@@ -61,17 +61,17 @@ class Player:
 
     def entrance(self, player_hitbox, room):
 
-        match player_hitbox.x:
-            case _ if player_hitbox.x < 100:
-                return "x", 1400, (room[0] - 1, room[1])
-            case _ if player_hitbox.x > 1400:
-                return "x", 100, (room[0] + 1, room[1])
 
-        match player_hitbox.y:
-            case _ if player_hitbox.y < 70:
-                return "y", 750, (room[0], room[1] - 1)
-            case _ if player_hitbox.y > 750:
-                return "y", 70, (room[0], room[1] + 1)
+        # Sorry for the spaghetti code, idk how else to do this, because tha match function only processes == operations, but not >/< operations
+        if player_hitbox.x < 100:
+            return "x", 1400, (room[0] - 1, room[1])
+        if player_hitbox.x > 1400:
+            return "x", 100, (room[0] + 1, room[1])
+
+        if player_hitbox.y < 70:
+            return "y", 750, (room[0], room[1] - 1)
+        if player_hitbox.y > 750:
+            return "y", 70, (room[0], room[1] + 1)
 
 
     def colliding(self, player_hitbox, prev_pos, delta, direction, rooms_dict, room):

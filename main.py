@@ -4,7 +4,7 @@ from random import randint
 
 # Importing from other scripts
 from sprites import Player
-from map import Tiles
+from rooms import Tiles
 from guns import GunSystem
 
 
@@ -36,9 +36,6 @@ bullet = pygame.rect.Rect((SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, BULLET_SIZE, BUL
 class Game:
 
     def __init__(self) -> None:
-        # NOTE_ TO SELF: CHANGE THESE NUMBERS
-        # Decides, what room type you begin in
-        map_num: int = 1
         
         self.bullet_spawned: bool = False
         self.bullet_dir: int = 1
@@ -58,7 +55,7 @@ class Game:
         # Tho main game loop
         while running:
 
-            # Sets the background
+            # Sets the background color
             screen.fill(BACKGROUND_COLOR)          
 
             # Functions

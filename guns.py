@@ -10,9 +10,6 @@ class GunSystem:
         self.bullet_dir = 0
 
         
-        
-    
-
     def position(self, gun, player, bullet_spawned):
 
         # Changes direction of gun according to the mouse's
@@ -34,13 +31,10 @@ class GunSystem:
         gun.y = player.y + 10
 
         # Bug patch
-        if self.gun_dir == -1:
-            gun.x += 35
+        gun.x += 35 if self.gun_dir == -1 else 0
 
 
 
-    
-    
     def shoot(self, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, gun, bullet_dir):
 
         # Detects if you click the mouse
@@ -59,8 +53,6 @@ class GunSystem:
         if bullet.x < 0 or bullet.y < 0 or bullet.x > SCREEN_WIDTH or bullet.y > SCREEN_HEIGHT == True:
             self.bullet_spawned = False
         
-        
-
 
 
     def run(self, gun, player, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, bullet_spawned, bullet_dir):
