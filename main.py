@@ -9,7 +9,7 @@ from guns import GunSystem
 
 
 # Global variables
-SCREEN_WIDTH: int = 1550
+SCREEN_WIDTH: int = 1536
 SCREEN_HEIGHT: int = 900
 PLAYER_SIZE: int = 64
 BULLET_SIZE: int = 8

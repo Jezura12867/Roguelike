@@ -1,7 +1,8 @@
 # Importing
 import pygame
-from sprites import Cube, Entrance
+from sprites import Cube, Entrance, Enemy
 from map import Rooms
+from random import randint
 
 class Tiles:
 
@@ -20,7 +21,8 @@ class Tiles:
 
 
         # Idk, if there's a better way to do this, if yes, I'll change thos
-        map = rooms_vars[0]
+        map = rooms_vars[0][0]
+        enemy_spawn_random_int = rooms_vars[0][1]
         rooms_dict = rooms_vars[1]
         room = rooms_vars[2]
 
@@ -29,18 +31,27 @@ class Tiles:
         for row, blank in enumerate(map):
             for collum, cell in enumerate(blank):
                 if cell == "X":
-                    x = collum * self.tile_size / 1.3 + 2
-                    y = row * self.tile_size / 1.325
+                    x = collum * self.tile_size
+                    y = row * self.tile_size
 
                     tile = Cube((x, y), self.tile_size)
                     self.tiles.add(tile)
                 
                 if cell == "E":
-                    x = collum * self.tile_size / 1.3 + 2
-                    y = row * self.tile_size / 1.325
+                    x = collum * self.tile_size
+                    y = row * self.tile_size
 
-                    tile = Entrance((x, y), self.tile_size + 2)
+                    tile = Entrance((x, y), self.tile_size)
                     self.exits.add(tile)
+                
+                if cell == "S" and (collum - row) % enemy_spawn_random_int == 0:
+                        x = collum * self.tile_size
+                        y = row * self.tile_size
+
+                        tile = Enemy((x, y), self.tile_size)
+                        self.exits.add(tile)
+
+
 
         self.tiles.draw(screen)
         self.exits.draw(screen)
@@ -53,7 +64,7 @@ class Tiles:
         # Defines what the room type is based on coords
         map_vars = Rooms().main(rooms_dict, room)
 
-        map = map_vars[0]
+        map = map_vars[0][0]
         room = map_vars[1]
 
         collided_objects = []
@@ -65,8 +76,8 @@ class Tiles:
 
                 # If cell is a wall
                 if cell == "X":
-                    x = collum * self.tile_size / 1.3 + 2
-                    y = row * self.tile_size / 1.325
+                    x = collum * self.tile_size
+                    y = row * self.tile_size
 
                     tile = Cube((x, y), self.tile_size)
 
@@ -75,10 +86,10 @@ class Tiles:
                     
                 # If cell is an entrance
                 if cell == "E":
-                    x = collum * self.tile_size / 1.3 + 2
-                    y = row * self.tile_size / 1.325
+                    x = collum * self.tile_size
+                    y = row * self.tile_size
 
-                    tile = Entrance((x, y), self.tile_size + 2)
+                    tile = Entrance((x, y), self.tile_size)
 
                     if pygame.Rect.colliderect(player_hitbox, tile.rect):
                         collided_objects.append("Entrance")
