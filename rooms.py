@@ -1,18 +1,18 @@
 # Importing
 import pygame
-from sprites import Cube, Entrance, Enemy
+from static_sprites import Cube, Entrance, Enemy
 from map import Rooms
-from random import randint
 
 class Tiles:
 
     def __init__(self) -> None:
 
-        super.__init__
+        super().__init__()
 
         self.tiles = pygame.sprite.Group()
         self.exits = pygame.sprite.Group()
         self.tile_size = 64
+
 
     def render(self, screen, rooms_dict, room):
 

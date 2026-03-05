@@ -1,10 +1,8 @@
-import pygame
 from random import randint
 
 class Rooms:
 
     def __init__(self) -> None:
-
 
         # Stores every possible room
         # X -- Wall
