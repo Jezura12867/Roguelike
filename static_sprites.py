@@ -1,4 +1,4 @@
-# Importing
+# Importing pygame
 import pygame
 
 class Cube(pygame.sprite.Sprite):
@@ -35,4 +35,3 @@ class Enemy(pygame.sprite.Sprite):
         self.image = pygame.Surface((size, size))
         self.image.fill("green")
         self.rect = self.image.get_rect(topleft = position)
-

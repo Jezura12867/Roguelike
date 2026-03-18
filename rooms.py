@@ -1,35 +1,32 @@
-# Importing
+# Importing pygame
 import pygame
+
+# Importing from other scripts
 from static_sprites import Cube, Entrance, Enemy
-from map import Rooms
+from map import Map
 
-class Tiles:
+class Rooms:
 
-    def __init__(self) -> None:
-
-        super().__init__()
+    def __init__(self):
 
         self.tiles = pygame.sprite.Group()
         self.exits = pygame.sprite.Group()
-        self.tile_size = 64
+        self.tile_size = 32
 
 
     def render(self, screen, rooms_dict, room):
 
         # Defines what the room type is based on coords
-        rooms_vars = Rooms().main(rooms_dict, room)
+        rooms_vars = Map().main(rooms_dict, room)
 
-
-        # Idk, if there's a better way to do this, if yes, I'll change thos
-        map = rooms_vars[0][0]
-        enemy_spawn_random_int = rooms_vars[0][1]
-        rooms_dict = rooms_vars[1]
-        room = rooms_vars[2]
+        (map, enemy_spawn_random_int), rooms_dict, room = rooms_vars
 
 
         # Renders room
         for row, blank in enumerate(map):
             for collum, cell in enumerate(blank):
+
+                # IF it's a wall
                 if cell == "X":
                     x = collum * self.tile_size
                     y = row * self.tile_size
@@ -37,6 +34,7 @@ class Tiles:
                     tile = Cube((x, y), self.tile_size)
                     self.tiles.add(tile)
                 
+                # If it's an entrance/exit
                 if cell == "E":
                     x = collum * self.tile_size
                     y = row * self.tile_size
@@ -44,6 +42,7 @@ class Tiles:
                     tile = Entrance((x, y), self.tile_size)
                     self.exits.add(tile)
                 
+                # If it's an enemy spawn location
                 if cell == "S" and (collum - row) % enemy_spawn_random_int == 0:
                         x = collum * self.tile_size
                         y = row * self.tile_size
@@ -51,8 +50,7 @@ class Tiles:
                         tile = Enemy((x, y), self.tile_size)
                         self.exits.add(tile)
 
-
-
+        # Draws everything
         self.tiles.draw(screen)
         self.exits.draw(screen)
 
@@ -62,7 +60,7 @@ class Tiles:
     def collision(self, player_hitbox, rooms_dict, room):
 
         # Defines what the room type is based on coords
-        map_vars = Rooms().main(rooms_dict, room)
+        map_vars = Map().main(rooms_dict, room)
 
         map = map_vars[0][0]
         room = map_vars[1]
@@ -81,7 +79,7 @@ class Tiles:
 
                     tile = Cube((x, y), self.tile_size)
 
-                    if  pygame.Rect.colliderect(player_hitbox, tile.rect):
+                    if pygame.Rect.colliderect(player_hitbox, tile.rect):
                         collided_objects.append("Wall")
                     
                 # If cell is an entrance

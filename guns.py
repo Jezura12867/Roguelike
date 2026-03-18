@@ -1,17 +1,18 @@
+# Importing pygame
 import pygame
 
 class GunSystem:
 
-    def __init__(self) -> None:
+    def __init__(self):
 
-        super().__init__()
-
-        self.bullet_spawned:bool = False
+        self.bullet_spawned: bool = False
         self.gun_dir = 1
         self.bullet_dir = 0
 
         
     def position(self, gun, player, bullet_spawned):
+
+        ############## SOON TO BE CHANGED ##############
 
         # Changes direction of gun according to the mouse's
         if player.x > pygame.mouse.get_pos()[0]:
@@ -63,4 +64,5 @@ class GunSystem:
         # Runs the whole function in the correct order
         GunSystem.shoot(self, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, gun, bullet_dir)
         GunSystem.position(self, gun, player, bullet_spawned)
+        
         return self.bullet_spawned, self.bullet_dir
