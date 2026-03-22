@@ -3,8 +3,8 @@ import pygame
 
 # Importing from other scripts
 from player import Player
-from rooms import Rooms
 from guns import GunSystem
+from rooms import Rooms
 
 
 # Global variables
@@ -13,7 +13,6 @@ SCREEN_HEIGHT: int = 900
 PLAYER_SIZE: float = 55
 BULLET_SIZE: int = 8
 BACKGROUND_COLOR = (127, 127, 127)
-
 
 # Pygame variables
 clock = pygame.time.Clock()
@@ -27,8 +26,12 @@ title: None = pygame.display.set_caption("Rougeu liek")
 
 # Sprites
 player_hitbox = pygame.rect.Rect((SCREEN_WIDTH / 3, SCREEN_HEIGHT / 2, PLAYER_SIZE, PLAYER_SIZE))
-gun = pygame.rect.Rect((SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 32, 16))
+gun_rect = pygame.rect.Rect((SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 32, 16))
+gun_image = pygame.image.load("Assets/gun.png").convert()
 bullet = pygame.rect.Rect((SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, BULLET_SIZE, BULLET_SIZE))
+
+gun_image.set_colorkey("White")
+
 
 # The game
 class Game:
@@ -36,7 +39,6 @@ class Game:
     def __init__(self):
         
         self.bullet_spawned: bool = False
-        self.bullet_dir: int = 1
         self.prev_pos = pygame.Vector2(player_hitbox.x, player_hitbox.y)
         self.dodge_roll_cooldown: int = 0
         self.dodge_roll_initiated: bool = False
@@ -57,27 +59,29 @@ class Game:
             # Sets the background color
             screen.fill(BACKGROUND_COLOR)
 
+
             # Functions
             rooms_dict = Rooms().render(screen, rooms_dict, room)
-            player_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.prev_pos, delta, rooms_dict, room, self.speed_boost_timer)
-            self.bullet_spawned, self.bullet_dir = GunSystem().run(gun, player_hitbox, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, self.bullet_spawned, self.bullet_dir)
+            player_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.prev_pos, delta, rooms_dict, room, self.speed_boost_timer, screen)
+            self.bullet_spawned = GunSystem().run(gun_rect, player_hitbox, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, self.bullet_spawned, gun_image, screen)
+
 
             # Player vars
             self.dodge_roll_initiated, self.prev_pos, room, self.speed_boost_multiplier, self.speed_boost_timer = player_vars
 
             # Dodge management
             self.dodge_roll_cooldown -= 1
+
             if self.dodge_roll_initiated == True:
                 self.dodge_roll_cooldown = 120
 
+            # Speed boost timer ticks down
             self.speed_boost_timer -= 1
 
             # Quit function
             running = Game().quitting()
 
             # Rendering
-            pygame.draw.rect(screen, (0, 255, 175), player_hitbox)
-            pygame.draw.rect(screen, (200, 200, 0), gun)
             if self.bullet_spawned == True:
                 pygame.draw.rect(screen, (200, 200, 0), bullet)
 

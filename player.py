@@ -102,17 +102,16 @@ class Player:
     def dodge_roll(self, dodge_roll_cooldown, key) -> bool:
 
         # Dodge roll
-        if dodge_roll_cooldown > 0:
-            return False
+        if dodge_roll_cooldown <= 0:
+            if key[pygame.K_SPACE] == True:
+                return True
         
-        if key[pygame.K_SPACE] != True:
-            return False
-            
-        return True
+        return False
 
 
     def speed_boost(self, boost_timer, dodge_roll_initiated) -> tuple[float, float]:
 
+        # Deafult value
         boost_multiplier = 1
 
         # Starts speed boost timer
@@ -128,7 +127,7 @@ class Player:
 
 
     # Runs the class functions
-    def run(self, player_hitbox, dodge_roll_cooldown, prev_pos, delta, rooms_dict, room, speed_boost_timer):
+    def run(self, player_hitbox, dodge_roll_cooldown, prev_pos, delta, rooms_dict, room, speed_boost_timer, screen):
 
         key, direction = Player().input_processing()
 
@@ -136,5 +135,7 @@ class Player:
         speed_boost_multiplier, speed_boost_timer = Player().speed_boost(speed_boost_timer, dodge_roll_initiated)
        
         prev_pos, player_hitbox, room = Player().colliding(player_hitbox, prev_pos, delta, direction, rooms_dict, room, speed_boost_multiplier)
+
+        pygame.draw.rect(screen, (0, 255, 175), player_hitbox)
 
         return dodge_roll_initiated, prev_pos, room, speed_boost_multiplier, speed_boost_timer

@@ -35,7 +35,7 @@ class Rooms:
                     self.tiles.add(tile)
                 
                 # If it's an entrance/exit
-                if cell == "E":
+                elif cell == "E":
                     x = collum * self.tile_size
                     y = row * self.tile_size
 
@@ -43,7 +43,7 @@ class Rooms:
                     self.exits.add(tile)
                 
                 # If it's an enemy spawn location
-                if cell == "S" and (collum - row) % enemy_spawn_random_int == 0:
+                elif cell == "S" and (collum - row) % enemy_spawn_random_int == 0:
                         x = collum * self.tile_size
                         y = row * self.tile_size
 
