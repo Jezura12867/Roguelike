@@ -57,7 +57,7 @@ class Rooms:
         return rooms_dict
         
     
-    def collision(self, player_hitbox, rooms_dict, room):
+    def collision(self, collide_object, rooms_dict, room):
 
         # Defines what the room type is based on coords
         map_vars = Map().main(rooms_dict, room)
@@ -79,7 +79,7 @@ class Rooms:
 
                     tile = Cube((x, y), self.tile_size)
 
-                    if pygame.Rect.colliderect(player_hitbox, tile.rect):
+                    if pygame.Rect.colliderect(collide_object, tile.rect):
                         collided_objects.append("Wall")
                     
                 # If cell is an entrance
@@ -89,7 +89,7 @@ class Rooms:
 
                     tile = Entrance((x, y), self.tile_size)
 
-                    if pygame.Rect.colliderect(player_hitbox, tile.rect):
+                    if pygame.Rect.colliderect(collide_object, tile.rect):
                         collided_objects.append("Entrance")
         
 

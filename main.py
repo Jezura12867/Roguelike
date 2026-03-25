@@ -10,6 +10,7 @@ from rooms import Rooms
 # Global variables
 SCREEN_WIDTH: int = 1536
 SCREEN_HEIGHT: int = 900
+SCREEN_PARAMETERS: tuple = SCREEN_WIDTH, SCREEN_HEIGHT
 PLAYER_SIZE: float = 55
 BULLET_SIZE: int = 8
 BACKGROUND_COLOR = (127, 127, 127)
@@ -39,6 +40,7 @@ class Game:
     def __init__(self):
         
         self.bullet_spawned: bool = False
+        self.bullet_dir = pygame.Vector2(0, 0)
         self.prev_pos = pygame.Vector2(player_hitbox.x, player_hitbox.y)
         self.dodge_roll_cooldown: int = 0
         self.dodge_roll_initiated: bool = False
@@ -49,7 +51,7 @@ class Game:
 
         # Var assigning
         running = True
-        delta: float = 1.0
+        delta: float = 0.0
         rooms_dict = {}
         room = 0, 0
     
@@ -59,11 +61,13 @@ class Game:
             # Sets the background color
             screen.fill(BACKGROUND_COLOR)
 
-
             # Functions
             rooms_dict = Rooms().render(screen, rooms_dict, room)
             player_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.prev_pos, delta, rooms_dict, room, self.speed_boost_timer, screen)
-            self.bullet_spawned = GunSystem().run(gun_rect, player_hitbox, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, self.bullet_spawned, gun_image, screen)
+
+            rooms_vars = rooms_dict, room
+            bullet_info = self.bullet_spawned, self.bullet_dir
+            self.bullet_spawned, self.bullet_dir = GunSystem().run(gun_rect, player_hitbox, bullet, SCREEN_PARAMETERS, bullet_info, gun_image, screen, rooms_vars)
 
 
             # Player vars
