@@ -88,6 +88,11 @@ class GunSystem:
         self.bullet_spawned, self.bullet_dir = bullet_info
 
 
+        # Rendering
+        if self.bullet_spawned == True:
+            pygame.draw.rect(screen, (200, 200, 0), bullet)
+
+
         # Runs the whole function in the correct order
         gun_rect = GunSystem.position(self, pygame.Vector2(player_hitbox.x, player_hitbox.y) + pygame.Vector2(player_hitbox.w, player_hitbox.h)/2, gun_rect, image, screen)
         GunSystem.shoot(self, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, gun_rect, rooms_dict, room)

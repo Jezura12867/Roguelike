@@ -3,6 +3,7 @@ import pygame
 
 # Importing from other scripts
 from player import Player
+from enemies import Enemy
 from guns import GunSystem
 from rooms import Rooms
 
@@ -46,6 +47,16 @@ class Game:
         self.dodge_roll_initiated: bool = False
         self.speed_boost_timer: float = 0
         self.speed_boost_multiplier: float = 1
+        self.room_entered: bool = False
+        self.enemy_dict = {}
+
+    
+    def on_enter_room(self):
+
+        bullet_spawned = False
+
+        return Enemy().spawn(), bullet_spawned
+
 
     def process(self):
 
@@ -54,9 +65,13 @@ class Game:
         delta: float = 0.0
         rooms_dict = {}
         room = 0, 0
+
+        # Initial spawn
+        self.enemy_dict, self.bullet_spawned = Game().on_enter_room()
     
         # Tho main game loop
         while running:
+
 
             # Sets the background color
             screen.fill(BACKGROUND_COLOR)
@@ -64,14 +79,16 @@ class Game:
             # Functions
             rooms_dict = Rooms().render(screen, rooms_dict, room)
             player_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.prev_pos, delta, rooms_dict, room, self.speed_boost_timer, screen)
+            self.enemy_dict = Enemy().run(screen, self.enemy_dict)
 
+            
             rooms_vars = rooms_dict, room
             bullet_info = self.bullet_spawned, self.bullet_dir
             self.bullet_spawned, self.bullet_dir = GunSystem().run(gun_rect, player_hitbox, bullet, SCREEN_PARAMETERS, bullet_info, gun_image, screen, rooms_vars)
 
 
             # Player vars
-            self.dodge_roll_initiated, self.prev_pos, room, self.speed_boost_multiplier, self.speed_boost_timer = player_vars
+            self.dodge_roll_initiated, self.prev_pos, room, self.speed_boost_multiplier, self.speed_boost_timer, self.room_entered = player_vars
 
             # Dodge management
             self.dodge_roll_cooldown -= 1
@@ -82,12 +99,13 @@ class Game:
             # Speed boost timer ticks down
             self.speed_boost_timer -= 1
 
+
+            # Room entrance logic
+            if self.room_entered == True:
+                self.enemy_dict, self.bullet_spawned = Game().on_enter_room()
+
             # Quit function
             running = Game().quitting()
-
-            # Rendering
-            if self.bullet_spawned == True:
-                pygame.draw.rect(screen, (200, 200, 0), bullet)
 
 
             # 60 fps; updating the screen

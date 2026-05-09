@@ -55,6 +55,7 @@ class Player:
             return ["y", 750, (room[0], room[1] - 1)]
         if player_hitbox.y > 750:
             return ["y", 70, (room[0], room[1] + 1)]
+        
 
         # Dw about this
         return [None]
@@ -64,8 +65,13 @@ class Player:
         # Checks if player is colliding with wall
         self.wall_colide = Rooms().collision(player_hitbox, rooms_dict, room)
 
+        room_entered = False
+
         # If exiting room
         if self.wall_colide == "Entrance":
+
+            room_entered = True
+
             entrance_vars: list = Player().entrance(player_hitbox, room)
 
             room = tuple(entrance_vars[2])
@@ -96,7 +102,7 @@ class Player:
             prev_pos.y = player_hitbox.y
 
         
-        return prev_pos, player_hitbox, room
+        return prev_pos, player_hitbox, room, room_entered
 
     
     def dodge_roll(self, dodge_roll_cooldown, key) -> bool:
@@ -134,8 +140,10 @@ class Player:
         dodge_roll_initiated: bool = Player().dodge_roll(dodge_roll_cooldown, key)
         speed_boost_multiplier, speed_boost_timer = Player().speed_boost(speed_boost_timer, dodge_roll_initiated)
        
-        prev_pos, player_hitbox, room = Player().colliding(player_hitbox, prev_pos, delta, direction, rooms_dict, room, speed_boost_multiplier)
+        prev_pos, player_hitbox, room, room_entered = Player().colliding(player_hitbox, prev_pos, delta, direction, rooms_dict, room, speed_boost_multiplier)
 
         pygame.draw.rect(screen, (0, 255, 175), player_hitbox)
 
-        return dodge_roll_initiated, prev_pos, room, speed_boost_multiplier, speed_boost_timer
+        return dodge_roll_initiated, prev_pos, room, speed_boost_multiplier, speed_boost_timer, room_entered
+
+from main import Game

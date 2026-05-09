@@ -2,7 +2,7 @@
 import pygame
 
 # Importing from other scripts
-from static_sprites import Cube, Entrance, Enemy
+from static_sprites import Cube, Entrance
 from map import Map
 
 class Rooms:
@@ -19,7 +19,7 @@ class Rooms:
         # Defines what the room type is based on coords
         rooms_vars = Map().main(rooms_dict, room)
 
-        (map, enemy_spawn_random_int), rooms_dict, room = rooms_vars
+        (map, unused_var), rooms_dict, room = rooms_vars
 
 
         # Renders room
@@ -42,13 +42,6 @@ class Rooms:
                     tile = Entrance((x, y), self.tile_size)
                     self.exits.add(tile)
                 
-                # If it's an enemy spawn location
-                elif cell == "S" and (collum - row) % enemy_spawn_random_int == 0:
-                        x = collum * self.tile_size
-                        y = row * self.tile_size
-
-                        tile = Enemy((x, y), self.tile_size)
-                        self.exits.add(tile)
 
         # Draws everything
         self.tiles.draw(screen)
