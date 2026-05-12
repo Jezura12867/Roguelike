@@ -51,11 +51,11 @@ class Game:
         self.enemy_dict = {}
 
     
-    def on_enter_room(self):
+    def on_enter_room(self, rooms_dict, room):
 
         bullet_spawned = False
 
-        return Enemy().spawn(), bullet_spawned
+        return Enemy().spawn(rooms_dict, room), bullet_spawned
 
 
     def process(self):
@@ -67,7 +67,7 @@ class Game:
         room = 0, 0
 
         # Initial spawn
-        self.enemy_dict, self.bullet_spawned = Game().on_enter_room()
+        self.enemy_dict, self.bullet_spawned = Game().on_enter_room(rooms_dict, room)
     
         # Tho main game loop
         while running:
@@ -102,7 +102,7 @@ class Game:
 
             # Room entrance logic
             if self.room_entered == True:
-                self.enemy_dict, self.bullet_spawned = Game().on_enter_room()
+                self.enemy_dict, self.bullet_spawned = Game().on_enter_room(rooms_dict, room)
 
             # Quit function
             running = Game().quitting()
