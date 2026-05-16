@@ -11,7 +11,7 @@ class GunSystem:
 
         self.bullet_spawned: bool = False
         self.bullet_dir = pygame.Vector2(0, 0)
-        self.bullet_speed = 15
+        self.bullet_speed = 30
         self.gun_player_offset = pygame.Vector2(50, 0)
 
 

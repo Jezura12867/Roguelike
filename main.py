@@ -21,7 +21,7 @@ clock = pygame.time.Clock()
 screen: pygame.Surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Top bar variables
-icon_sprite: pygame.Surface = pygame.image.load("Assets/Icon.png")
+icon_sprite: pygame.Surface = pygame.image.load("Desktop/Programming/Python/Pygame/Roguelike/Assets/Icon.png")
 icon_sprite.set_colorkey("White")
 icon: None = pygame.display.set_icon(icon_sprite)
 title: None = pygame.display.set_caption("Rougeu liek")
@@ -29,7 +29,7 @@ title: None = pygame.display.set_caption("Rougeu liek")
 # Sprites
 player_hitbox = pygame.rect.Rect((SCREEN_WIDTH / 3, SCREEN_HEIGHT / 2, PLAYER_SIZE, PLAYER_SIZE))
 gun_rect = pygame.rect.Rect((SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 32, 16))
-gun_image = pygame.image.load("Assets/gun.png").convert()
+gun_image = pygame.image.load("Desktop/Programming/Python/Pygame/Roguelike/Assets/gun.png").convert()
 bullet = pygame.rect.Rect((SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, BULLET_SIZE, BULLET_SIZE))
 
 gun_image.set_colorkey("White")
@@ -79,9 +79,8 @@ class Game:
             # Functions
             rooms_dict = Rooms().render(screen, rooms_dict, room)
             player_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.prev_pos, delta, rooms_dict, room, self.speed_boost_timer, screen)
-            self.enemy_dict = Enemy().run(screen, self.enemy_dict)
+            self.enemy_dict, self.bullet_spawned = Enemy().run(screen, self.enemy_dict, bullet, self.bullet_spawned)
 
-            
             rooms_vars = rooms_dict, room
             bullet_info = self.bullet_spawned, self.bullet_dir
             self.bullet_spawned, self.bullet_dir = GunSystem().run(gun_rect, player_hitbox, bullet, SCREEN_PARAMETERS, bullet_info, gun_image, screen, rooms_vars)
