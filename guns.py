@@ -65,7 +65,7 @@ class GunSystem:
     def shoot(self, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, gun, rooms_dict, room):
         
         # Checks if bullet has spawned, if yes, changes its position; else, sets its position to the gun's
-        if self.bullet_spawned == True:
+        if self.bullet_spawned:
             bullet.x += self.bullet_dir.x * self.bullet_speed
             bullet.y += self.bullet_dir.y * self.bullet_speed
         else:
@@ -76,7 +76,7 @@ class GunSystem:
             self.bullet_spawned = True
 
         # Despawns the bullet when it's offscreen or touches static object
-        if bullet.x < 0 or bullet.y < 0 or bullet.x > SCREEN_WIDTH or bullet.y > SCREEN_HEIGHT == True or Rooms().collision(bullet, rooms_dict, room) != False:
+        if bullet.x < 0 or bullet.y < 0 or bullet.x > SCREEN_WIDTH or bullet.y > SCREEN_HEIGHT or Rooms().collision(bullet, rooms_dict, room, None) != False:
             self.bullet_spawned = False
            
 
@@ -89,7 +89,7 @@ class GunSystem:
 
 
         # Rendering
-        if self.bullet_spawned == True:
+        if self.bullet_spawned:
             pygame.draw.rect(screen, (200, 200, 0), bullet)
 
 

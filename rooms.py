@@ -49,8 +49,30 @@ class Rooms:
 
         return rooms_dict
         
-    
-    def collision(self, collide_object, rooms_dict, room):
+    def individual_tile_detection(self, collum, row, cell, collide_object):
+
+        # If cell is a wall
+        if cell == "X":
+            x = collum * self.tile_size
+            y = row * self.tile_size
+
+            tile = Cube((x, y), self.tile_size)
+
+            if pygame.Rect.colliderect(collide_object, tile.rect):
+                return "Wall"
+            
+        # If cell is an entrance
+        if cell == "E":
+            x = collum * self.tile_size
+            y = row * self.tile_size
+
+            tile = Entrance((x, y), self.tile_size)
+
+            if pygame.Rect.colliderect(collide_object, tile.rect):
+                return "Entrance"
+            
+
+    def collision(self, collide_object, rooms_dict, room, enemy_dict):
 
         # Defines what the room type is based on coords
         map_vars = Map().main(rooms_dict, room)
@@ -60,30 +82,21 @@ class Rooms:
 
         collided_objects = []
 
+        if enemy_dict != None:
+            for id in enemy_dict:
+                enemy_hitbox = enemy_dict.get(id)
+
+                if pygame.rect.Rect.colliderect(enemy_hitbox, collide_object):
+                    collided_objects.append("Wall")
+
 
         # Checks every tile that is a wall
         for row, blank in enumerate(map):
             for collum, cell in enumerate(blank):
+                tile_colliding = Rooms().individual_tile_detection(collum, row, cell, collide_object)
 
-                # If cell is a wall
-                if cell == "X":
-                    x = collum * self.tile_size
-                    y = row * self.tile_size
-
-                    tile = Cube((x, y), self.tile_size)
-
-                    if pygame.Rect.colliderect(collide_object, tile.rect):
-                        collided_objects.append("Wall")
-                    
-                # If cell is an entrance
-                if cell == "E":
-                    x = collum * self.tile_size
-                    y = row * self.tile_size
-
-                    tile = Entrance((x, y), self.tile_size)
-
-                    if pygame.Rect.colliderect(collide_object, tile.rect):
-                        collided_objects.append("Entrance")
+                if tile_colliding != None:
+                    collided_objects.append(tile_colliding)
         
 
         # [I'm surprised that this isn't heavily nested]

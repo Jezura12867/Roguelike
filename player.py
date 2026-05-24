@@ -13,34 +13,33 @@ class Player:
         self.player_movement_speed: int = 65
         self.dodge_roll_mulitplier: int = 5
         self.dodge_roll_duration: int = 3
-        self.wall_colide = False
 
 
     def input_processing(self):
         
         # Key input
-        key = pygame.key.get_pressed()
-        direction: pygame.Vector2 = pygame.Vector2(0, 0)
+        key_pressed = pygame.key.get_pressed()
+        player_direction: pygame.Vector2 = pygame.Vector2(0, 0)
 
         # Direction
-        if key[pygame.K_w] == True:
-            direction.y = -1
+        if key_pressed[pygame.K_w]:
+            player_direction.y = -1
         
-        if key[pygame.K_s] == True:
-            direction.y = 1
+        if key_pressed[pygame.K_s]:
+            player_direction.y = 1
 
-        if key[pygame.K_a] == True:
-            direction.x = -1
+        if key_pressed[pygame.K_a]:
+            player_direction.x = -1
 
-        if key[pygame.K_d] == True:
-            direction.x = 1 
+        if key_pressed[pygame.K_d]:
+            player_direction.x = 1 
         
 
         # Direction normalization
-        if direction != pygame.Vector2(0, 0):
-            direction = direction.normalize()
+        if player_direction != pygame.Vector2(0, 0):
+            player_direction = player_direction.normalize()
 
-        return key, direction
+        return key_pressed, player_direction
 
 
     def entrance(self, player_hitbox, room) -> list:
@@ -60,21 +59,21 @@ class Player:
         # Dw about this
         return [None]
 
-    def colliding(self, player_hitbox, prev_pos, delta, direction, rooms_dict, room, speed_boost_multiplier):
+    def colliding(self, player_hitbox, previous_pos, delta, player_direction, rooms_dict, room_coordinates, speed_boost_multiplier, enemy_dict):
 
         # Checks if player is colliding with wall
-        self.wall_colide = Rooms().collision(player_hitbox, rooms_dict, room)
+        wall_colide = Rooms().collision(player_hitbox, rooms_dict, room_coordinates, enemy_dict)
 
         room_entered = False
 
         # If exiting room
-        if self.wall_colide == "Entrance":
+        if wall_colide == "Entrance":
 
             room_entered = True
 
-            entrance_vars: list = Player().entrance(player_hitbox, room)
+            entrance_vars: list = Player().entrance(player_hitbox, room_coordinates)
 
-            room = tuple(entrance_vars[2])
+            room_coordinates = tuple(entrance_vars[2])
 
             if entrance_vars[0] == "x":
                 player_hitbox.x = entrance_vars[1]
@@ -83,33 +82,33 @@ class Player:
         
 
         # Move player, if player if now colliding with wall, cancel
-        player_hitbox.x += direction.x * self.player_movement_speed * speed_boost_multiplier * delta
-        wall_colide = Rooms().collision(player_hitbox, rooms_dict, room)
+        player_hitbox.x += player_direction.x * self.player_movement_speed * speed_boost_multiplier * delta
+        wall_colide = Rooms().collision(player_hitbox, rooms_dict, room_coordinates, enemy_dict)
 
         if wall_colide == "Wall":
-            player_hitbox.x = prev_pos.x
+            player_hitbox.x = previous_pos.x
         else:
-            prev_pos.x = player_hitbox.x
+            previous_pos.x = player_hitbox.x
 
 
         # Same thing, but for the y axis
-        player_hitbox.y += direction.y * self.player_movement_speed * speed_boost_multiplier * delta
-        wall_colide = Rooms().collision(player_hitbox, rooms_dict, room)
+        player_hitbox.y += player_direction.y * self.player_movement_speed * speed_boost_multiplier * delta
+        wall_colide = Rooms().collision(player_hitbox, rooms_dict, room_coordinates, enemy_dict)
 
         if wall_colide == "Wall":
-            player_hitbox.y = prev_pos.y
+            player_hitbox.y = previous_pos.y
         else:
-            prev_pos.y = player_hitbox.y
+            previous_pos.y = player_hitbox.y
 
         
-        return prev_pos, player_hitbox, room, room_entered
+        return previous_pos, player_hitbox, room_coordinates, room_entered
 
     
-    def dodge_roll(self, dodge_roll_cooldown, key) -> bool:
+    def dodge_roll(self, dodge_roll_cooldown, key_pressed) -> bool:
 
         # Dodge roll
         if dodge_roll_cooldown <= 0:
-            if key[pygame.K_SPACE] == True:
+            if key_pressed[pygame.K_SPACE]:
                 return True
         
         return False
@@ -121,7 +120,7 @@ class Player:
         boost_multiplier = 1
 
         # Starts speed boost timer
-        if dodge_roll_initiated == True:
+        if dodge_roll_initiated:
             boost_timer = self.dodge_roll_duration
 
 
@@ -133,15 +132,15 @@ class Player:
 
 
     # Runs the class functions
-    def run(self, player_hitbox, dodge_roll_cooldown, prev_pos, delta, rooms_dict, room, speed_boost_timer, screen):
+    def run(self, player_hitbox, dodge_roll_cooldown, previous_pos, delta, rooms_dict, room_coordinates, speed_boost_timer, screen, enemy_dict):
 
-        key, direction = Player().input_processing()
+        key_pressed, player_direction = Player().input_processing()
 
-        dodge_roll_initiated: bool = Player().dodge_roll(dodge_roll_cooldown, key)
+        dodge_roll_initiated: bool = Player().dodge_roll(dodge_roll_cooldown, key_pressed)
         speed_boost_multiplier, speed_boost_timer = Player().speed_boost(speed_boost_timer, dodge_roll_initiated)
        
-        prev_pos, player_hitbox, room, room_entered = Player().colliding(player_hitbox, prev_pos, delta, direction, rooms_dict, room, speed_boost_multiplier)
+        previous_pos, player_hitbox, room_coordinates, room_entered = Player().colliding(player_hitbox, previous_pos, delta, player_direction, rooms_dict, room_coordinates, speed_boost_multiplier, enemy_dict)
 
         pygame.draw.rect(screen, (0, 255, 175), player_hitbox)
 
-        return dodge_roll_initiated, prev_pos, room, speed_boost_multiplier, speed_boost_timer, room_entered
+        return dodge_roll_initiated, previous_pos, room_coordinates, speed_boost_multiplier, speed_boost_timer, room_entered

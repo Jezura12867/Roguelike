@@ -21,7 +21,7 @@ clock = pygame.time.Clock()
 screen: pygame.Surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Top bar variables
-icon_sprite: pygame.Surface = pygame.image.load("Desktop/Programming/Python/Pygame/Roguelike/Assets/Icon.png")
+icon_sprite: pygame.Surface = pygame.image.load("Assets/Icon.png")
 icon_sprite.set_colorkey("White")
 icon: None = pygame.display.set_icon(icon_sprite)
 title: None = pygame.display.set_caption("Rougeu liek")
@@ -29,7 +29,7 @@ title: None = pygame.display.set_caption("Rougeu liek")
 # Sprites
 player_hitbox = pygame.rect.Rect((SCREEN_WIDTH / 3, SCREEN_HEIGHT / 2, PLAYER_SIZE, PLAYER_SIZE))
 gun_rect = pygame.rect.Rect((SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 32, 16))
-gun_image = pygame.image.load("Desktop/Programming/Python/Pygame/Roguelike/Assets/gun.png").convert()
+gun_image = pygame.image.load("Assets/gun.png").convert()
 bullet = pygame.rect.Rect((SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, BULLET_SIZE, BULLET_SIZE))
 
 gun_image.set_colorkey("White")
@@ -42,7 +42,7 @@ class Game:
         
         self.bullet_spawned: bool = False
         self.bullet_dir = pygame.Vector2(0, 0)
-        self.prev_pos = pygame.Vector2(player_hitbox.x, player_hitbox.y)
+        self.previous_pos = pygame.Vector2(player_hitbox.x, player_hitbox.y)
         self.dodge_roll_cooldown: int = 0
         self.dodge_roll_initiated: bool = False
         self.speed_boost_timer: float = 0
@@ -61,13 +61,13 @@ class Game:
     def process(self):
 
         # Var assigning
-        running = True
+        running: bool = True
         delta: float = 0.0
         rooms_dict = {}
-        room = 0, 0
+        room_coordinates = 0, 0
 
         # Initial spawn
-        self.enemy_dict, self.bullet_spawned = Game().on_enter_room(rooms_dict, room)
+        self.enemy_dict, self.bullet_spawned = Game().on_enter_room(rooms_dict, room_coordinates)
     
         # Tho main game loop
         while running:
@@ -77,22 +77,22 @@ class Game:
             screen.fill(BACKGROUND_COLOR)
 
             # Functions
-            rooms_dict = Rooms().render(screen, rooms_dict, room)
-            player_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.prev_pos, delta, rooms_dict, room, self.speed_boost_timer, screen)
-            self.enemy_dict, self.bullet_spawned = Enemy().run(screen, self.enemy_dict, bullet, self.bullet_spawned)
+            rooms_dict = Rooms().render(screen, rooms_dict, room_coordinates)
+            player_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.previous_pos, delta, rooms_dict, room_coordinates, self.speed_boost_timer, screen, self.enemy_dict)
+            self.bullet_spawned, self.enemy_dict = Enemy().run(screen, self.enemy_dict, bullet, self.bullet_spawned)
 
-            rooms_vars = rooms_dict, room
+            rooms_vars = rooms_dict, room_coordinates
             bullet_info = self.bullet_spawned, self.bullet_dir
             self.bullet_spawned, self.bullet_dir = GunSystem().run(gun_rect, player_hitbox, bullet, SCREEN_PARAMETERS, bullet_info, gun_image, screen, rooms_vars)
 
 
             # Player vars
-            self.dodge_roll_initiated, self.prev_pos, room, self.speed_boost_multiplier, self.speed_boost_timer, self.room_entered = player_vars
+            self.dodge_roll_initiated, self.previous_pos, room_coordinates, self.speed_boost_multiplier, self.speed_boost_timer, self.room_entered = player_vars
 
             # Dodge management
             self.dodge_roll_cooldown -= 1
 
-            if self.dodge_roll_initiated == True:
+            if self.dodge_roll_initiated:
                 self.dodge_roll_cooldown = 120
 
             # Speed boost timer ticks down
@@ -100,8 +100,8 @@ class Game:
 
 
             # Room entrance logic
-            if self.room_entered == True:
-                self.enemy_dict, self.bullet_spawned = Game().on_enter_room(rooms_dict, room)
+            if self.room_entered:
+                self.enemy_dict, self.bullet_spawned = Game().on_enter_room(rooms_dict, room_coordinates)
 
             # Quit function
             running = Game().quitting()
@@ -109,6 +109,7 @@ class Game:
 
             # 60 fps; updating the screen
             delta = clock.tick(60) / 100
+
             pygame.display.flip()
     
     def quitting(self):

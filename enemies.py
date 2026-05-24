@@ -13,35 +13,34 @@ class Enemy(pygame.sprite.Sprite):
 
     def spawn(self, rooms_dict, room_pos):
 
-        tile_size = 32
+        TILE_SIZE = 32
         self.enemy_dict = {}
         enemy_count_range = 2, 5
 
-        room = Map().main(rooms_dict, room_pos)[0][0]
+        room_coordinates = Map().main(rooms_dict, room_pos)[0][0]
 
         spawn_locations = []
 
         # Checks every tile
-        for row_num, blank in enumerate(room):
-            for collum_num, cell in enumerate(blank):
-
+        for row_num, row in enumerate(room_coordinates):
+            for collum_num, cell in enumerate(row):
                 # If cell is a enemy spawn point
                 if cell == "S":
-                    spawn_locations.append((row_num * tile_size, collum_num * tile_size))
+                    spawn_locations.append((row_num * TILE_SIZE, collum_num * TILE_SIZE))
+
 
         # How many enemies will spawn in this room
         enemies_to_spawn_count = randint(enemy_count_range[0], enemy_count_range[1])
 
-
         for i in range(enemies_to_spawn_count):
 
             # Selects random spawn location
-            temp_spawn_location = spawn_locations[randint(0, len(spawn_locations) - 1)]
+            temporary_spawn_location = spawn_locations[randint(0, len(spawn_locations) - 1)]
 
             # Two enemies can't have same spawn spot
-            spawn_locations.remove(temp_spawn_location)
+            spawn_locations.remove(temporary_spawn_location)
 
-            self.enemy_dict.update({i: pygame.rect.Rect((temp_spawn_location[1], temp_spawn_location[0], 55, 55))})
+            self.enemy_dict.update({i: pygame.rect.Rect((temporary_spawn_location[1], temporary_spawn_location[0], 55, 55))})
 
         return self.enemy_dict   
 
@@ -49,19 +48,19 @@ class Enemy(pygame.sprite.Sprite):
     def for_this_clone(self, enemy_dict, screen, id, bullet, bullet_spawned, enemies_to_kill):
 
         # Defines current clone
-        hitbox = enemy_dict.get(id)
+        clone_hitbox = enemy_dict.get(id)
 
         # Only execute if enemy is still alive
-        if hitbox == None:
+        if clone_hitbox == None:
             return bullet_spawned, enemies_to_kill
 
         # If collides with bullet, die
-        if pygame.Rect.colliderect(bullet, hitbox) and bullet_spawned == True:
+        if pygame.Rect.colliderect(bullet, clone_hitbox) and bullet_spawned:
             bullet_spawned = False
             enemies_to_kill.append(id)
 
         # Clone rendering
-        pygame.draw.rect(screen, (0, 255, 0, 255), hitbox)
+        pygame.draw.rect(screen, (0, 255, 0, 255), clone_hitbox)
 
         return bullet_spawned, enemies_to_kill
 
@@ -73,28 +72,27 @@ class Enemy(pygame.sprite.Sprite):
         enemy = None
 
         # For every enemy
-        for enemy_i in range(len(enemy_dict)):
-            enemy = enemy_dict.get(enemy_i)
+        for enemy_id in range(len(enemy_dict)):
+            enemy = enemy_dict.get(enemy_id)
 
             if enemy != None:
 
-                key = [key for key, val in enemy_dict.items() if val == enemy]
-                key = key[0]
+                enemy_key = [enemy_key for enemy_key, val in enemy_dict.items() if val == enemy][0]
 
                 # If key is further in list than an enemy that just died, bring its key's value down
-                if key > pos_popped:
+                if enemy_key > pos_popped:
                     swap_occured = True
-                    enemy_dict[key - 1] = enemy_dict.pop(key)
+                    enemy_dict[enemy_key - 1] = enemy_dict.pop(enemy_key)
         
         # Prevents a bug where there's an enemy in the list, but cannot be seen or interacted with in game
         if len(enemy_dict) > 0:
-            key = max(enemy_dict)
+            enemy_key = max(enemy_dict)
 
-            if enemy != None and swap_occured == True:
-                enemy_dict[key - 1] = enemy_dict.pop(key)
+            if enemy != None and swap_occured:
+                enemy_dict[enemy_key - 1] = enemy_dict.pop(enemy_key)
 
             else:
-                enemy_dict[len(enemy_dict)] = enemy_dict.pop(key)
+                enemy_dict[len(enemy_dict)] = enemy_dict.pop(enemy_key)
 
         
         return enemy_dict
@@ -109,6 +107,7 @@ class Enemy(pygame.sprite.Sprite):
         enemies_to_kill = []
 
 
+        # For every enemy
         for i in range(enemy_id_count):
             bullet_spawned, enemies_to_kill = Enemy().for_this_clone(enemy_dict, screen, i, bullet, bullet_spawned, enemies_to_kill)
 
@@ -116,11 +115,11 @@ class Enemy(pygame.sprite.Sprite):
         pos_popped = 127
 
         # Kills enemies
-        for i in enemies_to_kill:
-            pos_popped = i
-            enemy_dict.pop(i)
+        for enemy in enemies_to_kill:
+            pos_popped = enemy
+            enemy_dict.pop(enemy)
 
         # Corrects the dict order
         enemy_dict = Enemy().correct_dict_order(enemy_dict, pos_popped)
 
-        return enemy_dict, bullet_spawned
+        return bullet_spawned, enemy_dict
