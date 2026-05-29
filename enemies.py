@@ -3,18 +3,19 @@ import pygame
 
 # Imports randint and the Map class
 from random import randint
+from rooms import Rooms
 from map import Map
 
 
 class Enemy(pygame.sprite.Sprite):
 
     def __init__(self):
+        self.TILE_SIZE: int = 32
+        self.ENEMY_MOVE_SPEED: int = 50
         self.enemy_dict = {}  
 
     def spawn(self, rooms_dict, room_pos):
 
-        TILE_SIZE = 32
-        self.enemy_dict = {}
         enemy_count_range = 2, 5
 
         room_coordinates = Map().main(rooms_dict, room_pos)[0][0]
@@ -26,7 +27,7 @@ class Enemy(pygame.sprite.Sprite):
             for collum_num, cell in enumerate(row):
                 # If cell is a enemy spawn point
                 if cell == "S":
-                    spawn_locations.append((row_num * TILE_SIZE, collum_num * TILE_SIZE))
+                    spawn_locations.append((row_num * self.TILE_SIZE, collum_num * self.TILE_SIZE))
 
 
         # How many enemies will spawn in this room
@@ -40,12 +41,60 @@ class Enemy(pygame.sprite.Sprite):
             # Two enemies can't have same spawn spot
             spawn_locations.remove(temporary_spawn_location)
 
-            self.enemy_dict.update({i: pygame.rect.Rect((temporary_spawn_location[1], temporary_spawn_location[0], 55, 55))})
+            self.enemy_dict.update({i: pygame.rect.Rect((temporary_spawn_location[1], temporary_spawn_location[0], 54, 55))})
 
-        return self.enemy_dict   
+        return self.enemy_dict
+    
+
+    def enemy_to_target(self, clone_hitbox, id, rooms_dict, room_coordinates, enemy_dict, enemies_previous_pos_dict, enemy_to_update, delta):
+
+        # Sets the target and direction 
+        target = pygame.Vector2(69, 77)
+        enemy_is_enemy = True
+        direction = target - pygame.Vector2(clone_hitbox.x, clone_hitbox.y)
+
+        enemy_target_snap_distance = 3
+
+        # Snaps to target if close enough
+        if abs(direction.x) < enemy_target_snap_distance or abs(direction.y) < enemy_target_snap_distance:
+            clone_hitbox.x, clone_hitbox.y = target
+
+        # Normalizes direction and gets previous direction
+        direction = direction.normalize() if direction != pygame.Vector2(0, 0) else direction
+        previous_pos = enemies_previous_pos_dict.get(id) if enemies_previous_pos_dict.get(id) != None else pygame.Vector2(0, 0)
+
+        # If the clone is at its target, don't move
+        if target == pygame.Vector2(clone_hitbox.x, clone_hitbox.y):
+            return
+
+        # Does clone collide with wall?
+        wall_colide = Rooms().collision(clone_hitbox, rooms_dict, room_coordinates, enemy_dict, enemy_is_enemy)
+        
+        # Move enemy, if enemy if now colliding with wall, cancel
+        clone_hitbox.x += direction.x * self.ENEMY_MOVE_SPEED * delta
+        wall_colide = Rooms().collision(clone_hitbox, rooms_dict, room_coordinates, enemy_dict, enemy_is_enemy)
+
+        if wall_colide == "Wall":
+            clone_hitbox.x = previous_pos.x
+        else:
+            previous_pos.x = clone_hitbox.x
 
 
-    def for_this_clone(self, enemy_dict, screen, id, bullet, bullet_spawned, enemies_to_kill):
+        # Same thing, but for the y axis
+        clone_hitbox.y += direction.y * self.ENEMY_MOVE_SPEED * delta
+        wall_colide = Rooms().collision(clone_hitbox, rooms_dict, room_coordinates, enemy_dict, enemy_is_enemy)
+
+        if wall_colide == "Wall":
+           clone_hitbox.y = previous_pos.y
+        else:
+            previous_pos.y = clone_hitbox.y
+
+        # Cycles through enemies one at a time each frame. If its id matches, update the previous pos of the enemy
+        if enemy_to_update == id:
+            enemies_previous_pos_dict.update({id: previous_pos})
+
+
+    def for_this_clone(self, enemy_dict, screen, id, bullet, bullet_spawned, enemies_to_kill, rooms_dict, room_coordinates, enemies_previous_pos_dict, enemy_to_update, delta):
 
         # Defines current clone
         clone_hitbox = enemy_dict.get(id)
@@ -58,6 +107,8 @@ class Enemy(pygame.sprite.Sprite):
         if pygame.Rect.colliderect(bullet, clone_hitbox) and bullet_spawned:
             bullet_spawned = False
             enemies_to_kill.append(id)
+
+        self.enemy_to_target(clone_hitbox, id, rooms_dict, room_coordinates, enemy_dict, enemies_previous_pos_dict, enemy_to_update, delta)
 
         # Clone rendering
         pygame.draw.rect(screen, (0, 255, 0, 255), clone_hitbox)
@@ -98,18 +149,20 @@ class Enemy(pygame.sprite.Sprite):
         return enemy_dict
 
 
-    def run(self, screen, enemy_dict, bullet, bullet_spawned):
+    def run(self, screen, enemy_dict, bullet, bullet_spawned, room_coordinates, rooms_dict, enemies_previous_pos_dict, enemy_to_update, delta):
 
+        # Enemy related vars
         enemy_id_count = 0
-
         enemy_id_count = len(enemy_dict)
-
         enemies_to_kill = []
+        enemy_to_update += 1
 
+        if enemy_to_update > len(enemy_dict):
+            enemy_to_update = 0
 
         # For every enemy
         for i in range(enemy_id_count):
-            bullet_spawned, enemies_to_kill = Enemy().for_this_clone(enemy_dict, screen, i, bullet, bullet_spawned, enemies_to_kill)
+            bullet_spawned, enemies_to_kill = Enemy().for_this_clone(enemy_dict, screen, i, bullet, bullet_spawned, enemies_to_kill, rooms_dict, room_coordinates, enemies_previous_pos_dict, enemy_to_update, delta)
 
         # Makes sure that if there was nothing popped, it doesn't swap anything 
         pos_popped = 127
@@ -122,4 +175,4 @@ class Enemy(pygame.sprite.Sprite):
         # Corrects the dict order
         enemy_dict = Enemy().correct_dict_order(enemy_dict, pos_popped)
 
-        return bullet_spawned, enemy_dict
+        return bullet_spawned, enemy_dict, enemy_to_update

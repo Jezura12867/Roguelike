@@ -9,10 +9,10 @@ class GunSystem:
 
     def __init__(self):
 
+        self.BULLET_SPEED = 100
+        self.GUN_PLAYER_OFFSET = pygame.Vector2(50, 0)
         self.bullet_spawned: bool = False
         self.bullet_dir = pygame.Vector2(0, 0)
-        self.bullet_speed = 30
-        self.gun_player_offset = pygame.Vector2(50, 0)
 
 
     def rotate_around_pivot(self, image, angle, pivot, pos):
@@ -30,7 +30,7 @@ class GunSystem:
     def position(self, pivot, gun_rect, gun_image, screen):
 
         # Var setting      
-        pos = pivot + self.gun_player_offset
+        pos = pivot + self.GUN_PLAYER_OFFSET
         original_image = gun_image
         image_unflipped = original_image
         image_flipped = pygame.transform.flip(original_image, False, True)
@@ -62,12 +62,12 @@ class GunSystem:
         return gun_rect
 
 
-    def shoot(self, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, gun, rooms_dict, room):
+    def shoot(self, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, gun, rooms_dict, room, delta):
         
         # Checks if bullet has spawned, if yes, changes its position; else, sets its position to the gun's
         if self.bullet_spawned:
-            bullet.x += self.bullet_dir.x * self.bullet_speed
-            bullet.y += self.bullet_dir.y * self.bullet_speed
+            bullet.x += self.bullet_dir.x * self.BULLET_SPEED * delta
+            bullet.y += self.bullet_dir.y * self.BULLET_SPEED * delta
         else:
             bullet.x, bullet.y = gun.center
         
@@ -75,12 +75,14 @@ class GunSystem:
         if pygame.mouse.get_pressed()[0] == True:
             self.bullet_spawned = True
 
+        gun_is_enemy = False
+
         # Despawns the bullet when it's offscreen or touches static object
-        if bullet.x < 0 or bullet.y < 0 or bullet.x > SCREEN_WIDTH or bullet.y > SCREEN_HEIGHT or Rooms().collision(bullet, rooms_dict, room, None) != False:
+        if bullet.x < 0 or bullet.y < 0 or bullet.x > SCREEN_WIDTH or bullet.y > SCREEN_HEIGHT or Rooms().collision(bullet, rooms_dict, room, None, gun_is_enemy) != False:
             self.bullet_spawned = False
            
 
-    def run(self, gun_rect, player_hitbox, bullet, SCREEN_PARAMATERS, bullet_info, image, screen, room_vars):
+    def run(self, gun_rect, player_hitbox, bullet, SCREEN_PARAMATERS, bullet_info, image, screen, room_vars, delta):
 
         # Vatiables
         SCREEN_WIDTH, SCREEN_HEIGHT = SCREEN_PARAMATERS
@@ -95,6 +97,6 @@ class GunSystem:
 
         # Runs the whole function in the correct order
         gun_rect = GunSystem.position(self, pygame.Vector2(player_hitbox.x, player_hitbox.y) + pygame.Vector2(player_hitbox.w, player_hitbox.h)/2, gun_rect, image, screen)
-        GunSystem.shoot(self, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, gun_rect, rooms_dict, room)
+        GunSystem.shoot(self, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, gun_rect, rooms_dict, room, delta)
         
         return self.bullet_spawned, self.bullet_dir

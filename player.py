@@ -10,9 +10,9 @@ class Player:
     def __init__(self):
     
         # Variables
-        self.player_movement_speed: int = 65
-        self.dodge_roll_mulitplier: int = 5
-        self.dodge_roll_duration: int = 3
+        self.PLAYER_MOVEMENT_SPEED: int = 65
+        self.DODGE_ROLL_MULTIPLIER: int = 5
+        self.DODGE_ROLL_DURATION: int = 3
 
 
     def input_processing(self):
@@ -32,7 +32,7 @@ class Player:
             player_direction.x = -1
 
         if key_pressed[pygame.K_d]:
-            player_direction.x = 1 
+            player_direction.x = 1
         
 
         # Direction normalization
@@ -61,8 +61,10 @@ class Player:
 
     def colliding(self, player_hitbox, previous_pos, delta, player_direction, rooms_dict, room_coordinates, speed_boost_multiplier, enemy_dict):
 
+        player_is_enemy = False
+
         # Checks if player is colliding with wall
-        wall_colide = Rooms().collision(player_hitbox, rooms_dict, room_coordinates, enemy_dict)
+        wall_colide = Rooms().collision(player_hitbox, rooms_dict, room_coordinates, enemy_dict, player_is_enemy)
 
         room_entered = False
 
@@ -82,8 +84,8 @@ class Player:
         
 
         # Move player, if player if now colliding with wall, cancel
-        player_hitbox.x += player_direction.x * self.player_movement_speed * speed_boost_multiplier * delta
-        wall_colide = Rooms().collision(player_hitbox, rooms_dict, room_coordinates, enemy_dict)
+        player_hitbox.x += player_direction.x * self.PLAYER_MOVEMENT_SPEED * speed_boost_multiplier * delta
+        wall_colide = Rooms().collision(player_hitbox, rooms_dict, room_coordinates, enemy_dict, player_is_enemy)
 
         if wall_colide == "Wall":
             player_hitbox.x = previous_pos.x
@@ -92,8 +94,8 @@ class Player:
 
 
         # Same thing, but for the y axis
-        player_hitbox.y += player_direction.y * self.player_movement_speed * speed_boost_multiplier * delta
-        wall_colide = Rooms().collision(player_hitbox, rooms_dict, room_coordinates, enemy_dict)
+        player_hitbox.y += player_direction.y * self.PLAYER_MOVEMENT_SPEED * speed_boost_multiplier * delta
+        wall_colide = Rooms().collision(player_hitbox, rooms_dict, room_coordinates, enemy_dict, player_is_enemy)
 
         if wall_colide == "Wall":
             player_hitbox.y = previous_pos.y
@@ -121,12 +123,12 @@ class Player:
 
         # Starts speed boost timer
         if dodge_roll_initiated:
-            boost_timer = self.dodge_roll_duration
+            boost_timer = self.DODGE_ROLL_DURATION
 
 
         # Actually applies speed boost
         if boost_timer > 0:
-            boost_multiplier = self.dodge_roll_mulitplier
+            boost_multiplier = self.DODGE_ROLL_MULTIPLIER
 
         return boost_multiplier, boost_timer
 
