@@ -1,5 +1,6 @@
 # Importing pygame
 import pygame
+import math
 
 # Importing from the rooms script
 from rooms import Rooms
@@ -58,6 +59,30 @@ class Player:
 
         # Dw about this
         return [None]
+    
+    def enemy_push(self, player_hitbox, wall_colide, delta, speed_boost_multiplier):
+
+        # Constants
+        ENEMY_SIZE = 55
+        ENEMY_TO_PLAYER_PUSH_SPEED_MULTIPLIER = 0.8
+
+        # String to rect conversion
+        enemy_info = str(wall_colide).split("ect(")[1][:-2].split()
+        enemy_info = [element[: -1] for element in enemy_info]
+        enemy_info[3] = str(ENEMY_SIZE)
+        
+        enemy = pygame.rect.Rect(int(enemy_info[0]), int(enemy_info[1]), int(enemy_info[2]), int(enemy_info[3]))
+
+        # Push force -steel or smth idk
+        enemy_offset = pygame.Vector2(enemy.x, enemy.y) - pygame.Vector2(player_hitbox.x, player_hitbox.y)
+        enemy_angle = -math.degrees(math.atan2(enemy_offset.y, enemy_offset.x))
+        theta = enemy_angle * (math.pi / 180)
+
+        player_direction = pygame.Vector2(-math.cos(theta), math.sin(theta)).normalize()
+
+        # Applying force
+        player_hitbox.x += player_direction.x * delta * speed_boost_multiplier * self.PLAYER_MOVEMENT_SPEED * ENEMY_TO_PLAYER_PUSH_SPEED_MULTIPLIER
+        player_hitbox.y += player_direction.y * delta * speed_boost_multiplier * self.PLAYER_MOVEMENT_SPEED * ENEMY_TO_PLAYER_PUSH_SPEED_MULTIPLIER
 
     def colliding(self, player_hitbox, previous_pos, delta, player_direction, rooms_dict, room_coordinates, speed_boost_multiplier, enemy_dict):
 
@@ -81,14 +106,29 @@ class Player:
                 player_hitbox.x = entrance_vars[1]
             else:
                 player_hitbox.y = entrance_vars[1]
+
+            # Bug fix
+            player_is_enemy = True
         
 
         # Move player, if player if now colliding with wall, cancel
         player_hitbox.x += player_direction.x * self.PLAYER_MOVEMENT_SPEED * speed_boost_multiplier * delta
         wall_colide = Rooms().collision(player_hitbox, rooms_dict, room_coordinates, enemy_dict, player_is_enemy)
 
-        if wall_colide == "Wall":
+        if wall_colide == "Wall" or str(wall_colide)[:5] == "Enemy":
+
             player_hitbox.x = previous_pos.x
+            for i in range(self.PLAYER_MOVEMENT_SPEED):
+                
+                previous_pos.x = player_hitbox.x
+                player_hitbox.x += player_direction.x
+
+                wall_colide = Rooms().collision(player_hitbox, rooms_dict, room_coordinates, enemy_dict, player_is_enemy)
+                
+                if wall_colide:
+                    player_hitbox.x = previous_pos.x
+                    break
+
         else:
             previous_pos.x = player_hitbox.x
 
@@ -97,10 +137,25 @@ class Player:
         player_hitbox.y += player_direction.y * self.PLAYER_MOVEMENT_SPEED * speed_boost_multiplier * delta
         wall_colide = Rooms().collision(player_hitbox, rooms_dict, room_coordinates, enemy_dict, player_is_enemy)
 
-        if wall_colide == "Wall":
+        if wall_colide == "Wall" or str(wall_colide)[:5] == "Enemy":
+            
             player_hitbox.y = previous_pos.y
+            for i in range(self.PLAYER_MOVEMENT_SPEED):
+                
+                previous_pos.y = player_hitbox.y
+                player_hitbox.y += player_direction.y
+
+                wall_colide = Rooms().collision(player_hitbox, rooms_dict, room_coordinates, enemy_dict, player_is_enemy)  
+                             
+                if wall_colide:
+                    player_hitbox.y = previous_pos.y
+                    break
+
         else:
             previous_pos.y = player_hitbox.y
+
+        if str(wall_colide)[:5] == "Enemy":
+            Player().enemy_push(player_hitbox, wall_colide, delta, speed_boost_multiplier)
 
         
         return previous_pos, player_hitbox, room_coordinates, room_entered
@@ -144,5 +199,6 @@ class Player:
         previous_pos, player_hitbox, room_coordinates, room_entered = Player().colliding(player_hitbox, previous_pos, delta, player_direction, rooms_dict, room_coordinates, speed_boost_multiplier, enemy_dict)
 
         pygame.draw.rect(screen, (0, 255, 175), player_hitbox)
+
 
         return dodge_roll_initiated, previous_pos, room_coordinates, speed_boost_multiplier, speed_boost_timer, room_entered

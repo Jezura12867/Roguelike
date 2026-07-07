@@ -82,7 +82,7 @@ class Rooms:
 
         collided_objects = []
 
-        closest_cell = round(pygame.Vector2(collide_object.x, collide_object.y) / 1536 * 47, 0)
+        closest_cell = round(pygame.Vector2(collide_object.x / 1530 * 47.75 - 0.5, collide_object.y / 900 * 28 - 0.5), 0)
 
         closest_cell = pygame.Vector2(int(closest_cell.x), int(closest_cell.y))
 
@@ -91,7 +91,7 @@ class Rooms:
                 enemy_hitbox = enemy_dict.get(id)
 
                 if pygame.rect.Rect.colliderect(enemy_hitbox, collide_object):
-                    collided_objects.append("Wall")
+                    collided_objects.append(f"Enemy {enemy_hitbox}")
 
 
         # Checks every tile that is a wall
@@ -101,13 +101,22 @@ class Rooms:
             # Defines the row count and row contents
             row_count = row + closest_cell.y
             row_count = int(row_count)
+
+            if row_count > 27:
+                row_count = 27
+
             row_contents = map[row_count]
+
 
             for collum in range(3):
                 
                 # Defines the collum count and collum contents
                 collum_count = collum + closest_cell.x
                 collum_count = int(collum_count)
+
+                if collum_count > 47:
+                    collum_count = 47
+
                 cell = row_contents[collum_count]
 
                 tile_colliding = Rooms().individual_tile_detection(collum_count, row_count, cell, collide_object)
@@ -126,5 +135,8 @@ class Rooms:
         if "Entrance" in collided_objects:
             return "Entrance"
         
-        return "Wall"
+        if "Wall" in collided_objects:
+            return "Wall"
+
+        return collided_objects[0]
 

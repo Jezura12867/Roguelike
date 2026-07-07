@@ -11,12 +11,13 @@ class Enemy(pygame.sprite.Sprite):
 
     def __init__(self):
         self.TILE_SIZE: int = 32
-        self.ENEMY_MOVE_SPEED: int = 50
+        self.ENEMY_MOVE_SPEED: int = 25
         self.enemy_dict = {}  
 
     def spawn(self, rooms_dict, room_pos):
+        
 
-        enemy_count_range = 2, 5
+        enemy_count_range = 3, 5
 
         room_coordinates = Map().main(rooms_dict, room_pos)[0][0]
 
@@ -49,7 +50,7 @@ class Enemy(pygame.sprite.Sprite):
     def enemy_to_target(self, clone_hitbox, id, rooms_dict, room_coordinates, enemy_dict, enemies_previous_pos_dict, enemy_to_update, delta):
 
         # Sets the target and direction 
-        target = pygame.Vector2(69, 77)
+        target = pygame.Vector2(32, 32)
         enemy_is_enemy = True
         direction = target - pygame.Vector2(clone_hitbox.x, clone_hitbox.y)
 
@@ -107,6 +108,7 @@ class Enemy(pygame.sprite.Sprite):
         if pygame.Rect.colliderect(bullet, clone_hitbox) and bullet_spawned:
             bullet_spawned = False
             enemies_to_kill.append(id)
+        
 
         self.enemy_to_target(clone_hitbox, id, rooms_dict, room_coordinates, enemy_dict, enemies_previous_pos_dict, enemy_to_update, delta)
 
@@ -116,7 +118,7 @@ class Enemy(pygame.sprite.Sprite):
         return bullet_spawned, enemies_to_kill
 
 
-    def correct_dict_order(self, enemy_dict, pos_popped):
+    def correct_dict_order(self, enemy_dict, pos_popped, enemies_previous_pos_dict):
 
         swap_occured = False
 
@@ -134,6 +136,7 @@ class Enemy(pygame.sprite.Sprite):
                 if enemy_key > pos_popped:
                     swap_occured = True
                     enemy_dict[enemy_key - 1] = enemy_dict.pop(enemy_key)
+                    enemies_previous_pos_dict[enemy_key - 1] = enemies_previous_pos_dict.pop(enemy_key)
         
         # Prevents a bug where there's an enemy in the list, but cannot be seen or interacted with in game
         if len(enemy_dict) > 0:
@@ -141,12 +144,11 @@ class Enemy(pygame.sprite.Sprite):
 
             if enemy != None and swap_occured:
                 enemy_dict[enemy_key - 1] = enemy_dict.pop(enemy_key)
+                enemies_previous_pos_dict[enemy_key - 1] = enemies_previous_pos_dict.pop(enemy_key)
 
             else:
                 enemy_dict[len(enemy_dict)] = enemy_dict.pop(enemy_key)
 
-        
-        return enemy_dict
 
 
     def run(self, screen, enemy_dict, bullet, bullet_spawned, room_coordinates, rooms_dict, enemies_previous_pos_dict, enemy_to_update, delta):
@@ -173,6 +175,6 @@ class Enemy(pygame.sprite.Sprite):
             enemy_dict.pop(enemy)
 
         # Corrects the dict order
-        enemy_dict = Enemy().correct_dict_order(enemy_dict, pos_popped)
+        Enemy().correct_dict_order(enemy_dict, pos_popped, enemies_previous_pos_dict)
 
         return bullet_spawned, enemy_dict, enemy_to_update

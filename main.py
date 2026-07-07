@@ -7,7 +7,6 @@ from enemies import Enemy
 from guns import GunSystem
 from rooms import Rooms
 
-
 # Global variables
 SCREEN_WIDTH: int = 1536
 SCREEN_HEIGHT: int = 900
@@ -32,6 +31,7 @@ gun_rect = pygame.rect.Rect((SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 32, 16))
 gun_image = pygame.image.load("Assets/gun.png").convert()
 gun_image.set_colorkey("White")
 bullet = pygame.rect.Rect((SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, BULLET_SIZE, BULLET_SIZE))
+
 
 
 # The game
@@ -87,6 +87,7 @@ class Game:
 
             # Sets the background color
             screen.fill(BACKGROUND_COLOR)
+
 
             # Functions
             self.rooms_dict = Rooms().render(screen, self.rooms_dict, self.room_coordinates)
