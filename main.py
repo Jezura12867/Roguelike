@@ -12,7 +12,7 @@ SCREEN_WIDTH: int = 1536
 SCREEN_HEIGHT: int = 900
 SCREEN_PARAMETERS: tuple = SCREEN_WIDTH, SCREEN_HEIGHT
 PLAYER_SIZE: float = 55
-BULLET_SIZE: int = 8
+BULLET_SIZE: int = 16
 BACKGROUND_COLOR = (127, 127, 127)
 
 # Pygame variables
@@ -57,6 +57,7 @@ class Game:
         # Enemy
         self.enemies_previous_pos_dict = {}
         self.enemy_dict = {}
+        self.enemy_target_dict = {}
         
         # Rooms
         self.room_coordinates = 0, 0
@@ -92,7 +93,7 @@ class Game:
             # Functions
             self.rooms_dict = Rooms().render(screen, self.rooms_dict, self.room_coordinates)
             player_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.previous_pos, delta, self.rooms_dict, self.room_coordinates, self.speed_boost_timer, screen, self.enemy_dict)
-            self.bullet_spawned, self.enemy_dict, enemy_to_update = Enemy().run(screen, self.enemy_dict, bullet, self.bullet_spawned, self.room_coordinates, self.rooms_dict, self.enemies_previous_pos_dict, enemy_to_update, delta)
+            self.bullet_spawned, self.enemy_dict, enemy_to_update, self.enemy_target_dict = Enemy().run(screen, self.enemy_dict, bullet, self.bullet_spawned, self.room_coordinates, self.rooms_dict, self.enemies_previous_pos_dict, enemy_to_update, player_hitbox, self.enemy_target_dict, delta)
 
             rooms_vars = self.rooms_dict, self.room_coordinates
             bullet_info = self.bullet_spawned, self.bullet_dir

@@ -88,7 +88,7 @@ class Rooms:
 
         if enemy_dict != None and is_enemy == False:
             for id in enemy_dict:
-                enemy_hitbox = enemy_dict.get(id)
+                enemy_hitbox = enemy_dict.get(id)[0]
 
                 if pygame.rect.Rect.colliderect(enemy_hitbox, collide_object):
                     collided_objects.append(f"Enemy {enemy_hitbox}")

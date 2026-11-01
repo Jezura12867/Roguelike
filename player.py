@@ -64,7 +64,7 @@ class Player:
 
         # Constants
         ENEMY_SIZE = 55
-        ENEMY_TO_PLAYER_PUSH_SPEED_MULTIPLIER = 0.8
+        ENEMY_TO_PLAYER_PUSH_SPEED_MULTIPLIER = 0
 
         # String to rect conversion
         enemy_info = str(wall_colide).split("ect(")[1][:-2].split()
