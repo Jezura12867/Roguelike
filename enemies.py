@@ -11,7 +11,11 @@ class Enemy(pygame.sprite.Sprite):
 
     def __init__(self):
         self.TILE_SIZE: int = 32
-        self.ENEMY_MOVE_SPEED: int = 25
+        self.ENEMY_MOVE_SPEED: int = 50
+        self.ENEMY_BACK_AWAY_DISTANCE = 300
+        self.ENEMY_TARGET_SNAP_DISTANCE = 10
+        self.ENEMY_CHANGE_TARGET_CHANCE = 50
+        self.ENEMY_START_MOVING_CHANCE = randint(0, 100)
         self.enemy_dict = {}
 
     def spawn(self, rooms_dict, room_pos):
@@ -47,11 +51,7 @@ class Enemy(pygame.sprite.Sprite):
         return self.enemy_dict
     
 
-    def enemy_to_target(self, clone_hitbox, clone_state, id, rooms_dict, room_coordinates, enemy_dict, enemies_previous_pos_dict, enemy_to_update, target_dict, player_hitbox, delta):
-
-        enemy_target_snap_distance = 10
-        enemy_desired_distance_from_player = 300
-        enemy_change_target_chance = 50
+    def enemy_move(self, clone_hitbox, clone_state, id, rooms_dict, room_coordinates, enemy_dict, enemies_previous_pos_dict, enemy_to_update, target_dict, player_hitbox, delta):
 
         if target_dict.get(id) == None:
             target_dict.update({id: pygame.Vector2(randint(10, 1400), randint(10, 800))})
@@ -66,7 +66,7 @@ class Enemy(pygame.sprite.Sprite):
         enemy_direction_to_player = pygame.Vector2(clone_hitbox.x - player_hitbox.x, clone_hitbox.y - player_hitbox.y).normalize()
 
         # Snaps to target if close enough
-        if abs(clone_hitbox.x - target.x) < enemy_target_snap_distance and abs(clone_hitbox.y - target.y) < enemy_target_snap_distance:
+        if abs(clone_hitbox.x - target.x) < self.ENEMY_TARGET_SNAP_DISTANCE and abs(clone_hitbox.y - target.y) < self.ENEMY_TARGET_SNAP_DISTANCE:
             clone_hitbox.x, clone_hitbox.y = target
             direction = pygame.Vector2(0, 0)
 
@@ -101,12 +101,13 @@ class Enemy(pygame.sprite.Sprite):
             enemies_previous_pos_dict.update({id: previous_pos})
         
         # Fixes enemies getting stuck on walls
-        if randint(0, enemy_change_target_chance) == 1:
+        if randint(0, self.ENEMY_CHANGE_TARGET_CHANCE) == 1:
             target = pygame.Vector2(randint(10, 1400), randint(10, 800))
 
         enemy_distancing_from_player_multiplier = 15
 
-        if enemy_distance_from_player.x < enemy_desired_distance_from_player and enemy_distance_from_player.y < enemy_desired_distance_from_player:
+        if enemy_distance_from_player.x < self.ENEMY_BACK_AWAY_DISTANCE and enemy_distance_from_player.y < self.ENEMY_BACK_AWAY_DISTANCE:
+            clone_state = "idle"
             direction = pygame.Vector2(pygame.Vector2(clone_hitbox.x, clone_hitbox.y) - pygame.Vector2(player_hitbox.x, player_hitbox.y))
             target = pygame.Vector2(randint(5, 15) * enemy_direction_to_player.x * enemy_distancing_from_player_multiplier + clone_hitbox.x, randint(5, 15) * enemy_direction_to_player.y * enemy_distancing_from_player_multiplier + clone_hitbox.y)
     
@@ -129,9 +130,21 @@ class Enemy(pygame.sprite.Sprite):
         if pygame.Rect.colliderect(bullet, clone_hitbox) and bullet_spawned:
             bullet_spawned = False
             enemies_to_kill.append(id)
-        
 
-        target_dict, clone_hitbox, clone_state = self.enemy_to_target(clone_hitbox, clone_state, id, rooms_dict, room_coordinates, enemy_dict, enemies_previous_pos_dict, enemy_to_update, target_dict, player_hitbox, delta)
+        if clone_state == "idle":
+            
+            clone_state = "moving" if self.ENEMY_START_MOVING_CHANCE == 0 else "idle"
+
+            enemy_distance_from_player = pygame.Vector2(abs(clone_hitbox.x - player_hitbox.x), abs(clone_hitbox.y - player_hitbox.y))
+            
+            if enemy_distance_from_player.x < self.ENEMY_BACK_AWAY_DISTANCE and enemy_distance_from_player.y < self.ENEMY_BACK_AWAY_DISTANCE:
+                clone_state = "moving"
+        
+        if clone_state == "moving":
+            target_dict, clone_hitbox, clone_state = self.enemy_move(clone_hitbox, clone_state, id, rooms_dict, room_coordinates, enemy_dict, enemies_previous_pos_dict, enemy_to_update, target_dict, player_hitbox, delta)
+
+        enemy_dict.update({id: (clone_hitbox, clone_state)})
+
 
         # Clone rendering
         pygame.draw.rect(screen, (0, 255, 0, 255), clone_hitbox)
