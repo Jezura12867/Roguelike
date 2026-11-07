@@ -11,8 +11,19 @@ class GunSystem:
 
         self.BULLET_SPEED = 100
         self.GUN_PLAYER_OFFSET = pygame.Vector2(50, 0)
-        self.bullet_spawned: bool = False
+        self.MOUSE_ANGLE_DIFFERENCE: float = 7.5
+        self.bullet_spawned_dict: dict = {}
+        for i in range(-4, 5):
+            self.bullet_spawned_dict.update({i: False})
         self.bullet_dir = pygame.Vector2(0, 0)
+
+    def spawn(self, base_bullet):
+
+        bullet_dict = {}
+        for id in range(-4, 5):
+            bullet_dict.update({id: pygame.rect.Rect((base_bullet.x + id, base_bullet.y, base_bullet.w, base_bullet.h))})
+        
+        return bullet_dict
 
 
     def rotate_around_pivot(self, image, angle, pivot, pos):
@@ -27,7 +38,7 @@ class GunSystem:
         return surface, gun
 
         
-    def position(self, pivot, gun_rect, gun_image, screen):
+    def position(self, pivot, gun_rect, gun_image, screen, gun_cooldown):
 
         # Var setting      
         pos = pivot + self.GUN_PLAYER_OFFSET
@@ -49,54 +60,96 @@ class GunSystem:
             
         # Rotating the gun around pivot
         image, gun_rect = GunSystem().rotate_around_pivot(original_image, mouse_angle, pivot, pos)
+        
+        # If the bullet isn't spawned, set its direction
+        for id in self.bullet_spawned_dict:
+            id_value = self.bullet_spawned_dict.get(id)
+            if id_value == False and gun_cooldown < 0:
+                
+                # Sets the bullet direction to normalized Vector2 using, again, some math
+                theta = mouse_angle * (math.pi / 180)
+                self.bullet_dir = pygame.Vector2(math.cos(theta), -math.sin(theta)).normalize()
 
-        # Rednders both gun rect and image
-        pygame.draw.rect(screen, (105, 0, 10), gun_rect)
+        # Renders both gun rect and image
+        gun_color = (55, 155, 10) if gun_cooldown < 0 else (105, 0, 10)
+        pygame.draw.rect(screen, gun_color, gun_rect)
         screen.blit(image, gun_rect)
 
-        # Sets the bullet direction to normalized Vector2 using, again, some math
-        if self.bullet_spawned == False:
-            theta = mouse_angle * (math.pi / 180)
-            self.bullet_dir = pygame.Vector2(math.cos(theta), -math.sin(theta)).normalize()
-
-        return gun_rect
+        return gun_rect, mouse_angle
 
 
-    def shoot(self, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, gun, rooms_dict, room, delta):
-        
-        # Checks if bullet has spawned, if yes, changes its position; else, sets its position to the gun's
-        if self.bullet_spawned:
-            bullet.x += self.bullet_dir.x * self.BULLET_SPEED * delta
-            bullet.y += self.bullet_dir.y * self.BULLET_SPEED * delta
-        else:
-            bullet.x, bullet.y = gun.center
-        
-        # Detects if you click the mouse
-        if pygame.mouse.get_pressed()[0] == True:
-            self.bullet_spawned = True
+    def for_this_bullet(self, id, bullet_dict, gun, SCREEN_WIDTH, SCREEN_HEIGHT, rooms_dict, room, mouse_angle, delta):
+
+        # Fetches current bullet
+        bullet = bullet_dict.get(id)
+        bullet_spawned = self.bullet_spawned_dict.get(id)
 
         gun_is_enemy = False
 
         # Despawns the bullet when it's offscreen or touches static object
         if bullet.x < 0 or bullet.y < 0 or bullet.x > SCREEN_WIDTH or bullet.y > SCREEN_HEIGHT or Rooms().collision(bullet, rooms_dict, room, None, gun_is_enemy) != False:
-            self.bullet_spawned = False
+            self.bullet_spawned_dict.update({id: False})
+
+        # Decides angle based on general bullet direction and id
+        theta = math.atan2(-self.bullet_dir.y, self.bullet_dir.x)
+        bullet_angle = theta / (math.pi / 180)
+        bullet_angle += id * self.MOUSE_ANGLE_DIFFERENCE
+        theta = bullet_angle * (math.pi / 180)
+        bullet_dir = pygame.Vector2(math.cos(theta), -math.sin(theta)).normalize()
+
+
+        # Checks if bullet has spawned, if yes, changes its position; else, sets its position to the gun's
+        if bullet_spawned:
+            bullet.x += bullet_dir.x * self.BULLET_SPEED * delta
+            bullet.y += bullet_dir.y * self.BULLET_SPEED * delta
+        else:
+            bullet.x, bullet.y = gun.center
+
+        # Saves changes to dictionary
+        bullet_dict.update({id: bullet})
+
+        return bullet_dict
+
+
+    def shoot(self, bullet_dict, SCREEN_WIDTH, SCREEN_HEIGHT, gun, rooms_dict, room, gun_cooldown, mouse_angle, delta):
+        
+        # For each bullet
+        for id in range (-4, 5):
+            bullet_dict = self.for_this_bullet(id, bullet_dict, gun, SCREEN_WIDTH, SCREEN_HEIGHT, rooms_dict, room, mouse_angle, delta)
+        
+        # Shoots bullets and sets gun cooldown when clicking
+        if pygame.mouse.get_pressed()[0] == True and gun_cooldown < 0:
+            self.bullet_spawned_dict = {-2: True, -1: True, 0: True, 1: True, 2: True}
+            gun_cooldown = 60
+        
+        # Despawn bullets after a short time
+        if gun_cooldown < 35:
+            self.bullet_spawned_dict = {-2: False, -1: False, 0: False, 1: False, 2: False}
+        
+        # Gun_cooldown will never go below -1
+        gun_cooldown = 0 if gun_cooldown < 0 else gun_cooldown
+
+        return gun_cooldown, self.bullet_spawned_dict, bullet_dict
            
 
-    def run(self, gun_rect, player_hitbox, bullet, SCREEN_PARAMATERS, bullet_info, image, screen, room_vars, delta):
+    def run(self, gun_rect, player_hitbox, bullet_dict, SCREEN_PARAMATERS, bullet_info, image, screen, room_vars, gun_cooldown, delta):
 
-        # Vatiables
+        # Variables
         SCREEN_WIDTH, SCREEN_HEIGHT = SCREEN_PARAMATERS
         rooms_dict, room = room_vars
-        self.bullet_spawned, self.bullet_dir = bullet_info
-
-
-        # Rendering
-        if self.bullet_spawned:
-            pygame.draw.rect(screen, (200, 200, 0), bullet)
-
+        self.bullet_spawned_dict, self.bullet_dir = bullet_info
 
         # Runs the whole function in the correct order
-        gun_rect = GunSystem.position(self, pygame.Vector2(player_hitbox.x, player_hitbox.y) + pygame.Vector2(player_hitbox.w, player_hitbox.h)/2, gun_rect, image, screen)
-        GunSystem.shoot(self, bullet, SCREEN_WIDTH, SCREEN_HEIGHT, gun_rect, rooms_dict, room, delta)
+        gun_rect, mouse_angle = GunSystem.position(self, pygame.Vector2(player_hitbox.x, player_hitbox.y) + pygame.Vector2(player_hitbox.w, player_hitbox.h)/2, gun_rect, image, screen, gun_cooldown)
+        gun_cooldown, self.bullet_spawned_dict, bullet_dict = GunSystem.shoot(self, bullet_dict, SCREEN_WIDTH, SCREEN_HEIGHT, gun_rect, rooms_dict, room, gun_cooldown, mouse_angle, delta)
+
+        # Rendering bullets
+        for id in range(-4, 5):
+
+            bullet = bullet_dict.get(id)
+            bullet_spawned = self.bullet_spawned_dict.get(id)
+
+            if bullet_spawned:
+                pygame.draw.rect(screen, (200, 200, 0), bullet)
         
-        return self.bullet_spawned, self.bullet_dir
+        return self.bullet_spawned_dict, self.bullet_dir, gun_cooldown, bullet_dict

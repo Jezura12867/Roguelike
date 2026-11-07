@@ -30,7 +30,7 @@ player_hitbox = pygame.rect.Rect((SCREEN_WIDTH / 3, SCREEN_HEIGHT / 2, PLAYER_SI
 gun_rect = pygame.rect.Rect((SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 32, 16))
 gun_image = pygame.image.load("Assets/gun.png").convert()
 gun_image.set_colorkey("White")
-bullet = pygame.rect.Rect((SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, BULLET_SIZE, BULLET_SIZE))
+base_bullet = pygame.rect.Rect((SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, BULLET_SIZE, BULLET_SIZE))
 
 
 
@@ -40,8 +40,12 @@ class Game:
     def __init__(self):
         
         # Bullet
-        self.bullet_spawned: bool = False
+        self.bullet_spawned_dict: dict = {}
+        for i in range(-4, 5):
+            self.bullet_spawned_dict.update({i: False})
         self.bullet_dir = pygame.Vector2(0, 0)
+        self.gun_cooldown: int = 0
+        self.bullet_dict = {}
         
         # Player
         self.previous_pos = pygame.Vector2(player_hitbox.x, player_hitbox.y)
@@ -65,11 +69,9 @@ class Game:
         self.room_entered: bool = False
         
     
-    def on_enter_room(self, rooms_dict, room):
+    def on_enter_room(self, rooms_dict, room, base_bullet):
 
-        bullet_spawned = False
-
-        return Enemy().spawn(rooms_dict, room), bullet_spawned
+        return Enemy().spawn(rooms_dict, room), GunSystem().spawn(base_bullet)
 
 
     def process(self):
@@ -80,7 +82,7 @@ class Game:
         enemy_to_update = 0
 
         # Initial spawn
-        self.enemy_dict, self.bullet_spawned = Game().on_enter_room(self.rooms_dict, self.room_coordinates)
+        self.enemy_dict, self.bullet_dict = Game().on_enter_room(self.rooms_dict, self.room_coordinates, base_bullet)
     
         # Tho main game loop
         while running:
@@ -93,18 +95,18 @@ class Game:
             # Functions
             self.rooms_dict = Rooms().render(screen, self.rooms_dict, self.room_coordinates)
             player_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.previous_pos, delta, self.rooms_dict, self.room_coordinates, self.speed_boost_timer, screen, self.enemy_dict)
-            self.bullet_spawned, self.enemy_dict, enemy_to_update, self.enemy_target_dict = Enemy().run(screen, self.enemy_dict, bullet, self.bullet_spawned, self.room_coordinates, self.rooms_dict, self.enemies_previous_pos_dict, enemy_to_update, player_hitbox, self.enemy_target_dict, delta)
+            self.bullet_spawned_dict, self.enemy_dict, enemy_to_update, self.enemy_target_dict = Enemy().run(screen, self.enemy_dict, self.bullet_dict, self.bullet_spawned_dict, self.room_coordinates, self.rooms_dict, self.enemies_previous_pos_dict, enemy_to_update, player_hitbox, self.enemy_target_dict, delta)
 
             rooms_vars = self.rooms_dict, self.room_coordinates
-            bullet_info = self.bullet_spawned, self.bullet_dir
-            self.bullet_spawned, self.bullet_dir = GunSystem().run(gun_rect, player_hitbox, bullet, SCREEN_PARAMETERS, bullet_info, gun_image, screen, rooms_vars, delta)
-
+            bullet_info = self.bullet_spawned_dict, self.bullet_dir
+            self.bullet_spawned_dict, self.bullet_dir, self.gun_cooldown, self.bullet_dict = GunSystem().run(gun_rect, player_hitbox, self.bullet_dict, SCREEN_PARAMETERS, bullet_info, gun_image, screen, rooms_vars, self.gun_cooldown, delta)
 
             # Player vars
             self.dodge_roll_initiated, self.previous_pos, self.room_coordinates, self.speed_boost_multiplier, self.speed_boost_timer, self.room_entered = player_vars
 
             # Dodge roll management
             self.dodge_roll_cooldown -= 1
+            self.gun_cooldown -= 1
 
             if self.dodge_roll_initiated:
                 self.dodge_roll_cooldown = 120
@@ -114,7 +116,7 @@ class Game:
 
             # Room entrance logic
             if self.room_entered:
-                self.enemy_dict, self.bullet_spawned = Game().on_enter_room(self.rooms_dict, self.room_coordinates)
+                self.enemy_dict, self.bullet_dict = Game().on_enter_room(self.rooms_dict, self.room_coordinates, base_bullet)
 
             # Quit function
             Game().quitting()
