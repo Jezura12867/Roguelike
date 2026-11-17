@@ -133,7 +133,9 @@ class Rooms:
 
         # Code prioritises entrances over walls in terms of collision
         if "Entrance" in collided_objects:
-            return "Entrance"
+                if enemy_dict == {}:
+                    return "Entrance"
+                return"Wall"
         
         if "Wall" in collided_objects:
             return "Wall"

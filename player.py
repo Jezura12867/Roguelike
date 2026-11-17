@@ -200,5 +200,4 @@ class Player:
 
         pygame.draw.rect(screen, (0, 255, 175), player_hitbox)
 
-
         return dodge_roll_initiated, previous_pos, room_coordinates, speed_boost_multiplier, speed_boost_timer, room_entered

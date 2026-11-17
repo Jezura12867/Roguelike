@@ -12,20 +12,30 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self):
         self.TILE_SIZE: int = 32
 
+        # Enemy movement
         self.ENEMY_MOVE_SPEED: int = 40
         self.ENEMY_BACK_AWAY_DISTANCE = 300
         self.ENEMY_TARGET_SNAP_DISTANCE = 10
         self.ENEMY_CHANGE_TARGET_CHANCE = 50
-        self.ENEMY_START_MOVING_CHANCE = randint(0, 100)
 
+        # Enemy chances
+        self.ENEMY_START_MOVING_CHANCE = 3
+        self.ENEMY_SHOOT_CHANCE = 5
+        self.ENEMY_SHOOT_CHANCE_DEAMPLIFIER = 1
+
+        # Damage enemies vars
         self.START_HEALTH: int = 100
-        self.BULLET_DAMAGE:int = 50
+        self.BULLET_DAMAGE:int = 35
+        self.ENEMY_BULLET_SIZE = 32
+        self.BULLET_MOVE_SPEED: int = 60
+
+        self.ENEMY_BULLET_DAMAGE: int = 25
 
         self.enemy_dict = {}
 
-    def spawn(self, rooms_dict, room_pos):
+    def spawn(self, rooms_dict, room_pos, enemy_bullet_dict):
         
-        enemy_count_range = 3, 5
+        enemy_count_range = 5, 8
 
         room_coordinates = Map().main(rooms_dict, room_pos)[0][0]
 
@@ -49,10 +59,23 @@ class Enemy(pygame.sprite.Sprite):
 
             # Two enemies can't have same spawn spot
             spawn_locations.remove(temporary_spawn_location)
-
             self.enemy_dict.update({i: (pygame.rect.Rect((temporary_spawn_location[1], temporary_spawn_location[0], 54, 55)), "moving", self.START_HEALTH)})
 
-        return self.enemy_dict
+            enemy_bullet_dict.update({i: (pygame.rect.Rect(temporary_spawn_location[1], temporary_spawn_location[0], self.ENEMY_BULLET_SIZE, self.ENEMY_BULLET_SIZE), pygame.Vector2(0, 0))})
+
+        return self.enemy_dict, enemy_bullet_dict
+
+
+    def shoot(self, enemy_bullet_dict, id, enemy, enemy_direction_to_player):
+
+        bullet = enemy_bullet_dict.get(id)[0]
+
+        bullet.x, bullet.y = enemy.x, enemy.y
+
+        enemy_bullet_dict.update({id: (bullet, enemy_direction_to_player)})
+
+        return enemy_bullet_dict
+
 
     def back_away(self, clone_hitbox, repulsive_object, enemy_direction_to_repulsive_object):
         enemy_distancing_from_player_multiplier = 15
@@ -77,6 +100,7 @@ class Enemy(pygame.sprite.Sprite):
         if abs(clone_hitbox.x - target.x) < self.ENEMY_TARGET_SNAP_DISTANCE and abs(clone_hitbox.y - target.y) < self.ENEMY_TARGET_SNAP_DISTANCE:
             clone_hitbox.x, clone_hitbox.y = target
             direction = pygame.Vector2(0, 0)
+            clone_state = "idle"
 
         # Normalizes direction and gets previous direction
         direction = direction.normalize() if direction != pygame.Vector2(0, 0) else direction
@@ -123,7 +147,7 @@ class Enemy(pygame.sprite.Sprite):
 
         return target_dict, clone_hitbox, clone_state
 
-    def for_this_clone(self, enemy_dict, screen, id, bullet_dict, bullet_spawned_dict, enemies_to_kill: list[int], rooms_dict, room_coordinates, enemies_previous_pos_dict, enemy_to_update, player_hitbox, target_dict, delta):
+    def for_this_clone(self, enemy_dict, screen, id, bullet_dict, bullet_spawned_dict, enemies_to_kill: list[int], rooms_dict, room_coordinates, enemies_previous_pos_dict, enemy_to_update, player_hitbox, target_dict, enemy_bullet_dict, player_health, delta):
 
         # Defines current clone
         clone_hitbox, clone_state, clone_health = enemy_dict.get(id)
@@ -132,6 +156,7 @@ class Enemy(pygame.sprite.Sprite):
         if clone_hitbox == None:
             return bullet_spawned_dict, enemies_to_kill
 
+        # Enemy got hit
         for bullet_id in range(-4, 5):
 
             bullet = bullet_dict.get(bullet_id)
@@ -148,20 +173,50 @@ class Enemy(pygame.sprite.Sprite):
                 if clone_health <= 0:
                     if id not in enemies_to_kill:
                         enemies_to_kill.append(id)
+        
+        # Player got hit
+        clone_bullet, bullet_move_direction = enemy_bullet_dict.get(id)
+        if pygame.Rect.colliderect(clone_bullet, player_hitbox):
 
-        # ADD SHOOTING BEHAVIOUR HERE
+            clone_bullet.x, clone_bullet.y = clone_hitbox.x, clone_hitbox.y
+            enemy_bullet_dict.update({id: (clone_bullet, pygame.Vector2(0, 0))})
+
+            player_health -= self.ENEMY_BULLET_DAMAGE
+
+            # Flash frame
+            pygame.draw.rect(screen, (255, 0, 0), player_hitbox)
+
         if clone_state == "idle":
-            
+
             # Start moving base on random chance
-            clone_state = "moving" if self.ENEMY_START_MOVING_CHANCE == 0 else "idle"
+            clone_state = "moving" if randint(0, self.ENEMY_START_MOVING_CHANCE) == 0 else "idle"
 
             enemy_distance_from_player = pygame.Vector2(abs(clone_hitbox.x - player_hitbox.x), abs(clone_hitbox.y - player_hitbox.y))
             enemy_direction_to_player = pygame.Vector2(clone_hitbox.x - player_hitbox.x, clone_hitbox.y - player_hitbox.y).normalize()
             
             # If player withing enemy back away distance, back away
             if enemy_distance_from_player.x < self.ENEMY_BACK_AWAY_DISTANCE and enemy_distance_from_player.y < self.ENEMY_BACK_AWAY_DISTANCE:
-                direction_unused, target = self.back_away(clone_hitbox, player_hitbox, enemy_direction_to_player)
+                target = self.back_away(clone_hitbox, player_hitbox, enemy_direction_to_player)
+                target = target[1]
                 target_dict.update({id: target})
+
+            self.ENEMY_SHOOT_CHANCE = len(enemy_dict) + self.ENEMY_SHOOT_CHANCE_DEAMPLIFIER
+
+            if randint(0, self.ENEMY_SHOOT_CHANCE) == 0 and bullet_move_direction == pygame.Vector2(0, 0):
+                enemy_bullet_dict = self.shoot(enemy_bullet_dict, id, clone_hitbox, enemy_direction_to_player)
+        
+        if bullet_move_direction != pygame.Vector2(0, 0):
+            clone_bullet.x -= bullet_move_direction.x * self.BULLET_MOVE_SPEED * delta
+            clone_bullet.y -= bullet_move_direction.y * self.BULLET_MOVE_SPEED * delta
+
+            enemy_is_enemy = False
+            collision_state = Rooms().collision(clone_bullet, rooms_dict, room_coordinates, enemy_dict, enemy_is_enemy)
+
+            pygame.draw.rect(screen, (255, 255, 255), clone_bullet)
+
+            if collision_state == "Wall" or collision_state == "Entrance":
+                clone_bullet.x, clone_bullet.y = clone_hitbox.x, clone_hitbox.y
+                enemy_bullet_dict.update({id: (clone_bullet, pygame.Vector2(0, 0))})
 
                   
         # Not only for moving in general
@@ -175,7 +230,7 @@ class Enemy(pygame.sprite.Sprite):
         health_color_shift = 0 if clone_health == 100 else 255
         pygame.draw.rect(screen, (0 + health_color_shift, 255, 0, 255), clone_hitbox)
 
-        return bullet_spawned_dict, enemies_to_kill, target_dict
+        return bullet_spawned_dict, enemies_to_kill, target_dict, player_health
 
 
     def correct_dict_order(self, enemy_dict, pos_popped, enemies_previous_pos_dict):
@@ -214,7 +269,7 @@ class Enemy(pygame.sprite.Sprite):
 
 
 
-    def run(self, screen, enemy_dict, bullet_dict, bullet_spawned_dict, room_coordinates, rooms_dict, enemies_previous_pos_dict, enemy_to_update, player_hitbox, target_dict, delta):
+    def run(self, screen, enemy_dict, bullet_dict, bullet_spawned_dict, room_coordinates, rooms_dict, enemies_previous_pos_dict, enemy_to_update, player_hitbox, target_dict, enemy_bullet_dict, player_health, delta):
 
         # Enemy related vars
         enemy_id_count = 0
@@ -227,7 +282,7 @@ class Enemy(pygame.sprite.Sprite):
 
         # For every enemy
         for id in range(enemy_id_count):
-            bullet_spawned_dict, enemies_to_kill, target_dict = Enemy().for_this_clone(enemy_dict, screen, id, bullet_dict, bullet_spawned_dict, enemies_to_kill, rooms_dict, room_coordinates, enemies_previous_pos_dict, enemy_to_update, player_hitbox, target_dict, delta)
+            bullet_spawned_dict, enemies_to_kill, target_dict, player_health = Enemy().for_this_clone(enemy_dict, screen, id, bullet_dict, bullet_spawned_dict, enemies_to_kill, rooms_dict, room_coordinates, enemies_previous_pos_dict, enemy_to_update, player_hitbox, target_dict, enemy_bullet_dict, player_health, delta)
 
         # Makes sure that if there was nothing popped, it doesn't swap anything 
         pos_popped = 127
@@ -240,4 +295,4 @@ class Enemy(pygame.sprite.Sprite):
         # Corrects the dict order
         Enemy().correct_dict_order(enemy_dict, pos_popped, enemies_previous_pos_dict)
 
-        return bullet_spawned_dict, enemy_dict, enemy_to_update, target_dict
+        return bullet_spawned_dict, enemy_dict, enemy_to_update, target_dict, enemy_bullet_dict, player_health

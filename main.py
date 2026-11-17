@@ -7,7 +7,10 @@ from enemies import Enemy
 from guns import GunSystem
 from rooms import Rooms
 
-# Global variables
+# Initializes pygame
+pygame.init()
+
+# Constant vars
 SCREEN_WIDTH: int = 1536
 SCREEN_HEIGHT: int = 900
 SCREEN_PARAMETERS: tuple = SCREEN_WIDTH, SCREEN_HEIGHT
@@ -18,6 +21,7 @@ BACKGROUND_COLOR = (127, 127, 127)
 # Pygame variables
 clock = pygame.time.Clock()
 screen: pygame.Surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+health_font = pygame.font.Font('Assets/arial.TTF', 32)
 
 # Top bar variables
 icon_sprite: pygame.Surface = pygame.image.load("Assets/Icon.png")
@@ -49,6 +53,7 @@ class Game:
         
         # Player
         self.previous_pos = pygame.Vector2(player_hitbox.x, player_hitbox.y)
+        self.player_health: int = 100
 
         # Dodge_roll
         self.dodge_roll_cooldown: int = 0
@@ -62,6 +67,7 @@ class Game:
         self.enemies_previous_pos_dict = {}
         self.enemy_dict = {}
         self.enemy_target_dict = {}
+        self.enemy_bullet_dict = {}
         
         # Rooms
         self.room_coordinates = 0, 0
@@ -69,9 +75,11 @@ class Game:
         self.room_entered: bool = False
         
     
-    def on_enter_room(self, rooms_dict, room, base_bullet):
+    def on_enter_room(self, rooms_dict, room, base_bullet, enemy_bullet_dict, player_health):
 
-        return Enemy().spawn(rooms_dict, room), GunSystem().spawn(base_bullet)
+        player_health = 100
+
+        return Enemy().spawn(rooms_dict, room, enemy_bullet_dict), GunSystem().spawn(base_bullet), player_health
 
 
     def process(self):
@@ -82,7 +90,9 @@ class Game:
         enemy_to_update = 0
 
         # Initial spawn
-        self.enemy_dict, self.bullet_dict = Game().on_enter_room(self.rooms_dict, self.room_coordinates, base_bullet)
+        self.enemy_dict, self.bullet_dict, self.player_health = Game().on_enter_room(self.rooms_dict, self.room_coordinates, base_bullet, self.enemy_bullet_dict, self.player_health)
+
+        self.enemy_dict, self.enemy_bullet_dict = self.enemy_dict
     
         # Tho main game loop
         while running:
@@ -95,14 +105,18 @@ class Game:
             # Functions
             self.rooms_dict = Rooms().render(screen, self.rooms_dict, self.room_coordinates)
             player_vars = Player().run(player_hitbox, self.dodge_roll_cooldown, self.previous_pos, delta, self.rooms_dict, self.room_coordinates, self.speed_boost_timer, screen, self.enemy_dict)
-            self.bullet_spawned_dict, self.enemy_dict, enemy_to_update, self.enemy_target_dict = Enemy().run(screen, self.enemy_dict, self.bullet_dict, self.bullet_spawned_dict, self.room_coordinates, self.rooms_dict, self.enemies_previous_pos_dict, enemy_to_update, player_hitbox, self.enemy_target_dict, delta)
+            self.bullet_spawned_dict, self.enemy_dict, enemy_to_update, self.enemy_target_dict, self.enemy_bullet_dict, self.player_health = Enemy().run(screen, self.enemy_dict, self.bullet_dict, self.bullet_spawned_dict, self.room_coordinates, self.rooms_dict, self.enemies_previous_pos_dict, enemy_to_update, player_hitbox, self.enemy_target_dict, self.enemy_bullet_dict, self.player_health, delta)
 
             rooms_vars = self.rooms_dict, self.room_coordinates
             bullet_info = self.bullet_spawned_dict, self.bullet_dir
-            self.bullet_spawned_dict, self.bullet_dir, self.gun_cooldown, self.bullet_dict = GunSystem().run(gun_rect, player_hitbox, self.bullet_dict, SCREEN_PARAMETERS, bullet_info, gun_image, screen, rooms_vars, self.gun_cooldown, delta)
+            self.bullet_spawned_dict, self.bullet_dir, self.gun_cooldown, self.bullet_dizct = GunSystem().run(gun_rect, player_hitbox, self.bullet_dict, SCREEN_PARAMETERS, bullet_info, gun_image, screen, rooms_vars, self.gun_cooldown, delta)
 
             # Player vars
             self.dodge_roll_initiated, self.previous_pos, self.room_coordinates, self.speed_boost_multiplier, self.speed_boost_timer, self.room_entered = player_vars
+
+            # Display health above player
+            health_text = health_font.render(str(self.player_health), True, (0, 0, 0))
+            screen.blit(health_text, pygame.rect.Rect(player_hitbox.x, player_hitbox.y - 25, PLAYER_SIZE, PLAYER_SIZE))
 
             # Dodge roll management
             self.dodge_roll_cooldown -= 1
@@ -116,7 +130,9 @@ class Game:
 
             # Room entrance logic
             if self.room_entered:
-                self.enemy_dict, self.bullet_dict = Game().on_enter_room(self.rooms_dict, self.room_coordinates, base_bullet)
+                self.enemy_dict, self.bullet_dict, self.player_health = Game().on_enter_room(self.rooms_dict, self.room_coordinates, base_bullet, self.enemy_bullet_dict, self.player_health)
+
+                self.enemy_dict, self.enemy_bullet_dict = self.enemy_dict
 
             # Quit function
             Game().quitting()
